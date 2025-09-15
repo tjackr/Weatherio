@@ -1,4 +1,3 @@
-
 # C-kompilator (byt vid behov, t.ex. clang)
 # Detta är en enkel variabel definition
 CC := gcc
@@ -13,7 +12,8 @@ BUILD_DIR := build
 
 # Flaggor: standard, varningar, optimering + auto-dep för headers 
 # Detta är en enkel variabel definition
-CFLAGS := -std=c90 -Wall -Wextra -MMD -MP
+CFLAGS := -std=c90 -Wall -Wextra -MMD -MP -Ilibs -DJSON_INLINE= -DINLINE= -Dinline=
+
 
 # Länkarflaggor
 # Detta är en enkel variabel definition
@@ -21,7 +21,8 @@ LDFLAGS := -flto -Wl,--gc-sections
 
 # Bibliotek att länka mot
 # Detta är en enkel variabel definition
-LIBS := -lcurl
+LIBS := -lcurl -ljansson
+
 
 # Hittar alla .c filer rekursivt i katalogen.
 #Den anropar 'find' kommandot i Linux och formaterar resultatet som en lista på sökvägar med mellanslag mellan varje
@@ -40,7 +41,7 @@ DEP := $(OBJ:.o=.d)
 
 # Namnet på den körbara filen
 # Detta är en enkel variabel definition
-BIN := OpenMeteoCLI
+BIN := main
 
 # Standardmål: bygg binären
 # Se det som en function man kan anropa utifrån (make all)
