@@ -12,7 +12,7 @@ BUILD_DIR := build
 
 # Flaggor: standard, varningar, optimering + auto-dep för headers 
 # Detta är en enkel variabel definition
-CFLAGS := -std=c90 -Wall -Wextra -MMD -MP -Ilibs -DJSON_INLINE= -DINLINE= -Dinline=
+CFLAGS := -std=c90 -Wall -Wextra -MMD -MP
 
 
 # Länkarflaggor
@@ -21,7 +21,7 @@ LDFLAGS := -flto -Wl,--gc-sections
 
 # Bibliotek att länka mot
 # Detta är en enkel variabel definition
-LIBS := -lcurl -ljansson
+LIBS := -lcurl
 
 
 # Hittar alla .c filer rekursivt i katalogen.

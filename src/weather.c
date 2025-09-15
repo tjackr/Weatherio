@@ -1,5 +1,5 @@
 /* weather.c */
-#include "weather.h"
+#include "libs/weather.h"
 
 #include <stdio.h>
 #include <string.h>

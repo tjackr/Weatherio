@@ -3,6 +3,8 @@
 #include <string.h>
 #include <locale.h>
 
+/*Requirements for JSON library
+
 #ifndef JSON_INLINE
 #define JSON_INLINE
 #endif
@@ -10,9 +12,10 @@
 #define INLINE
 #endif
 #include <jansson.h>
+*/
 
-#include "weather.h"
-#include "http.h"
+#include "libs/weather.h"
+#include "libs/http.h"
 
 
 
@@ -24,7 +27,7 @@ static void rstrip_newline(char *s)
     }
 }
 
-/* Parse Open-Meteo JSON and print current weather fields */
+/* Parse Open-Meteo JSON and print current weather fields
 static void parse_weather(const char *json_text)
 {
     json_error_t error;
@@ -82,6 +85,7 @@ static void parse_weather(const char *json_text)
 
     json_decref(root);
 }
+    */
 
 
 int main(void)
@@ -133,9 +137,11 @@ int main(void)
         printf("\nFetching:\n%s\n\n", url);
 
        if (http_get(url, response, sizeof(response)) == 0) {
+        
     /* Optional: raw JSON
-       printf("Response:\n%s\n", response); */
-    parse_weather(response);
+       printf("Response:\n%s\n", response);
+    parse_weather(response); */
+
 } else {
     puts("HTTP request failed.");
 }
