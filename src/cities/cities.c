@@ -33,19 +33,19 @@ const char* citystring = "Stockholm:59.3293:18.0686\n" "Göteborg:57.7089:11.974
 void citystring_parse(const char* citystring, char* input_string, city city_ptr) {
   const char *ptr       = citystring;
   const char *tok_start = citystring;
-  char* token;
+  char token[64];
 
   while (*ptr != '\0')
   {
     if (*ptr == ':' || *ptr == '\n')
     {
       size_t length = ptr - tok_start;
-      memcpy(&token, tok_start, length); /* Copy token data to temp buffer */
-      token[length] = '\0'; /* Make buffer safe */
+      memcpy(token, tok_start, length); /* Copy token data to temp buffer */
+      token[length] = '\0'; /* null terminate last byte to make safe */
       
       if (strcmp(token, input_string) ==0)
       {
-        printf("%s", token);
+        printf("%s\n", token);
       }
 
       /* Set token start to the next token */
