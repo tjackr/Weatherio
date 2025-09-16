@@ -9,10 +9,12 @@ typedef struct
 
 } city;
 
-const char* cities();
+/* const char* cities(); */
 
-void cityurl(const char* cities, char* url);
+/* void cityurl(const char* cities, char* url); */
 
 void citystring_parse(const char* citystring, city *cities_ptr);
+
+void build_meteourl (char* url, city city);
 
 #endif

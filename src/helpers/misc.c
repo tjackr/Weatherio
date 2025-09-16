@@ -2,6 +2,14 @@
 #include <stdio.h>
 #include <ctype.h>
 
+/* Clear stdin */
+void clear_input()
+{
+  int ch; 
+  while ((ch = getchar()) != '\n' && ch != EOF);
+}
+
+
 void format_name(char* input)
 {
   int i;
@@ -16,21 +24,28 @@ void format_name(char* input)
   }
 }
 
-int yes_or_no(char* question, char answer)
+int yes_or_no(char *question)
 {
-  printf("%s\n", question);
-  scanf(" %c", &answer);
+  char input[2];
+  while (1)
+  {
+    printf("input 1: %s\n", input);
+    printf("%s", question);
+    fgets(input, sizeof(input), stdin);
+    clear_input();
 
-  if (answer == 'n' || answer == 'N')
-  {
-    return 0; /* No */
-  }
-  else if (answer == 'y' || answer == 'Y')
-  {
-    return 1; /* Yes */
-  }
-  else {
-    return 2; /* Invalid */
+    if (input[1] == '\n') {
+      printf("input 2: %s\n", input);
+      /* If input is yes or no return 1 or 0 */
+      if (input[0] == 'y' || input[0] == 'Y')
+        return 1;
+      else if (input[0] == 'n' || input[0] == 'N')
+        return 0;
+
+    } else {
+      printf("input 3: %s\n", input);
+      printf("Ogiltigt svar!\n");
+    }
   }
 }
 
@@ -47,6 +62,15 @@ int line_count(const char* string)
   return lc;
 }
 
+/*
+const char* read_file(char* filepath)
+{
+  char *ptr;
+  return
+}
+*/
+
+/* This doesn't really do anything useful */
 void save_json_to_file (const char* json, char* filename)
 {
   FILE * res_json;
