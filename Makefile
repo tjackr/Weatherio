@@ -13,7 +13,7 @@ BUILD_DIR := build
 
 # Flaggor: standard, varningar, optimering + auto-dep för headers 
 # Detta är en enkel variabel definition
-CFLAGS := -std=c90 -Wall -Wextra -MMD -MP
+CFLAGS := -std=c89 -Wall -Wextra -MMD -MP
 
 # Länkarflaggor
 # Detta är en enkel variabel definition
@@ -40,7 +40,7 @@ DEP := $(OBJ:.o=.d)
 
 # Namnet på den körbara filen
 # Detta är en enkel variabel definition
-BIN := OpenMeteoCLI
+BIN := weatherio
 
 # Standardmål: bygg binären
 # Se det som en function man kan anropa utifrån (make all)

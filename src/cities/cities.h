@@ -4,8 +4,8 @@
 typedef struct 
 {
   char    name[64];
-  char    lat[16];
-  char    lon[16];
+  float   lat;
+  float   lon;
 
 } city;
 
@@ -13,5 +13,6 @@ const char* cities();
 
 void cityurl(const char* cities, char* url);
 
+void citystring_parse(const char* citystring, city *cities_ptr);
 
 #endif

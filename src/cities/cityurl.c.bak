@@ -34,6 +34,8 @@ char* cityurl (const char* cities, char* url)
         {
             sprintf(url, "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current_weather=true", lat, lon);
             printf("URL: \"%s\"\r\n", url);
+        } else {
+          printf("CITY DON'T EXIST!");
         }
     }
 
