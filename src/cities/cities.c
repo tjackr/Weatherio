@@ -6,9 +6,9 @@
 
 
 /* Custom loop for tokenizing citystring and building the struct */
-void citystring_parse(const char* citystring, city *cities_ptr) {
-  const char *ptr       = citystring; /* Like a cursor, moving from char to char */
-  const char *tok_start = citystring; 
+void citystring_parse(const char* citystring, city* cities_ptr) {
+  const char* ptr       = citystring; /* Like a cursor, moving from char to char */
+  const char* tok_start = citystring; 
 
   char token[64]; /* Temp buffer, max chars as max chars cityname */
   int part = 0, city_index = 0;

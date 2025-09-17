@@ -13,7 +13,7 @@ typedef struct
 
 /* void cityurl(const char* cities, char* url); */
 
-void citystring_parse(const char* citystring, city *cities_ptr);
+void citystring_parse(const char* citystring, city* cities_ptr);
 
 void build_meteourl (char* url, city city);
 

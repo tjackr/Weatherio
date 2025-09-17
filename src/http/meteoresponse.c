@@ -14,10 +14,10 @@
 */
 
 /* Mystery daniel@haxx.se callback function */
-size_t write_memory(void *contents, size_t size, size_t nmemb, struct memory_chunk *data) /* What is nmemb? */
+size_t write_memory(void* contents, size_t size, size_t nmemb, struct memory_chunk* data) /* What is nmemb? */
 {
   size_t realsize = size * nmemb; 
-  struct memory_chunk *mem = (struct memory_chunk *)data; /* What the hell does this mean? We define a new pointer-chunk off the input chunk? */
+  struct memory_chunk *mem = (struct memory_chunk*)data; /* What the hell does this mean? We define a new pointer-chunk off the input chunk? Why do we need to cast data to what it already is? */
 
   char *ptr = realloc(mem->addr, mem->size + realsize + 1); /* We reallocate memory for our chunk and make a pointer to the new addr */
   if (!ptr)
@@ -36,7 +36,7 @@ size_t write_memory(void *contents, size_t size, size_t nmemb, struct memory_chu
 
 char* get_meteo_response(char* url, char* response)
 {
-  CURL *curl;
+  CURL* curl;
   CURLcode res;
   struct memory_chunk data;
   char error[CURL_ERROR_SIZE];

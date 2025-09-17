@@ -24,7 +24,7 @@ void format_name(char* input)
   }
 }
 
-int yes_or_no(char *question)
+int yes_or_no(char* question)
 {
   char input[2];
   while (1)
@@ -73,9 +73,8 @@ const char* read_file(char* filepath)
 /* This doesn't really do anything useful */
 void save_json_to_file (const char* json, char* filename)
 {
-  FILE * res_json;
-  res_json = fopen (filename,"w");
-  if (res_json == NULL)
+  FILE* res_json = fopen (filename,"w");
+  if (!res_json)
   {
     printf("Error writing to file: %s", (char*)res_json);
 

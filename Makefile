@@ -40,7 +40,7 @@ DEP := $(OBJ:.o=.d)
 
 # Namnet på den körbara filen
 # Detta är en enkel variabel definition
-BIN := weatherio
+BIN := Weatherio
 
 # Standardmål: bygg binären
 # Se det som en function man kan anropa utifrån (make all)
