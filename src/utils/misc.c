@@ -70,15 +70,3 @@ const char* read_file(char* filepath)
 }
 */
 
-/* This doesn't really do anything useful */
-void save_json_to_file (const char* json, char* filename)
-{
-  FILE* res_json = fopen (filename,"w");
-  if (!res_json)
-  {
-    printf("Error writing to file: %s", (char*)res_json);
-
-  }
-  fputs (json, res_json);
-  fclose (res_json);
-}

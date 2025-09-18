@@ -2,7 +2,7 @@
 
 #include "cities/cities.h"
 #include "http/http.h"
-#include "helpers/misc.h"
+#include "utils/misc.h"
 
 #include <locale.h>
 
@@ -10,7 +10,7 @@
 int main(void)
 {
   int i;
-  setlocale(LC_ALL, "en_US.UTF-8");  /* Believe it or not, atof() separates decimals based on locale, and our cities string uses dots to separate commas which is standard for US locale. So choosing between replacing every dot in the string with commas and simply using en_US locale I chose the latter */
+  setlocale(LC_ALL, "en_US.UTF-8");  /* atof() separates decimals based on locale, and our cities string uses dots to separate commas which is standard for US locale. So choosing between replacing every dot in the string with commas and simply using en_US locale I chose the latter */
 
   
   /* We should read this from file using an fopen function in the future */
@@ -31,6 +31,7 @@ int main(void)
 */
   while (go_again != 0)
   {
+
     
     for (i = 0; i < city_count; i++)
     {
@@ -54,5 +55,4 @@ int main(void)
 
   }
 
-  return 0;
 }
