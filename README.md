@@ -26,7 +26,7 @@ Run the CLI app:
 
 ## Contribution
 
-1. Don't push to main
+1. Push only to main branch after tested fully in development branch
 
 2. ...
 

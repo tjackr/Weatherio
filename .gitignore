@@ -65,3 +65,6 @@ _*
 
 # No backup files
 *.bak
+
+# Ignore binary file
+Weatherio
