@@ -66,7 +66,7 @@ int cli_init(Cities* _cities) {
 
     }
     else {
-      printf("Ogiltigt svar! Välj en siffra...\n");
+      printf("\nOgiltigt svar! Välj en siffra ur listan...");
       input_choice = 0;
       go_again = 1;
     }

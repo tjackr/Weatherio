@@ -36,13 +36,13 @@ int cities_print(Cities* _cities)
 	if (current == NULL)
 	{
 		printf("No Cities to print\n");
-		return 0;
+		return -1;
 	}
 
-  int i = 1;
+  int i = 0;
 	do
 	{
-		printf("  %i - %s, Latitude: %.4f, Longitude: %.4f\n", i, current->name, current->lat, current->lon);
+		printf("  %i - %s, Latitude: %.4f, Longitude: %.4f\n", i+1, current->name, current->lat, current->lon);
 		current = current->next;
     i++;
 
@@ -168,14 +168,15 @@ int city_get_by_name(Cities* _cities, const char* _name, City** _city)
 /* Get city by its index in the cities linked list */
 int city_get_by_index(Cities* _cities, int* _cities_count, int* _index, City** _city)
 {
+
   City* current = _cities->head;
   if (current == NULL)
     return -1;
 
   int i;
-  for (i = 1; i < *_cities_count; i++)
+  for (i = 0; i < *_cities_count; i++)
   {
-    if (i == *_index)
+    if (i == *_index-1)
     {
       *_city = current;
       return 0;

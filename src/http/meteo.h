@@ -31,6 +31,7 @@ typedef struct
    * */
   bool        current; /* Get current data only */
   bool        celsius;
+  char*       timezone;
 
 } Meteo;
 
