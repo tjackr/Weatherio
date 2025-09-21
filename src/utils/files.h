@@ -1,8 +1,8 @@
 #ifndef __FILES_H__
 #define __FILES_H__
 
-char** loadfile(char* filename, int* len);
+const char* load_file_as_string(const char* _filename);
 
-void save_json_to_file (const char* json, char* filename);
+int save_string_to_file (const char* _str, char* _filename);
 
 #endif

@@ -1,20 +1,48 @@
-#ifndef CITIES_H
-#define CITIES_H
+#ifndef __CITIES_H__
+#define __CITIES_H__
 
-typedef struct 
+#include "../http/meteo.h"
+
+typedef struct City City;
+
+typedef struct City
 {
-  char    name[64];
-  float   lat;
-  float   lon;
+	City*     prev;
+	City*     next;
 
-} city;
+	char*     name;
+	float     lat;
+	float     lon;
 
-/* const char* cities(); */
+  Weather*  weather;
 
-/* void cityurl(const char* cities, char* url); */
+} City;
 
-void citystring_parse(const char* citystring, city* cities_ptr);
+typedef struct
+{
+	City*     head;
+	City*     tail;
 
-void build_meteourl (char* url, city city);
+	Meteo     meteo;
 
-#endif
+} Cities;
+
+
+int cities_init(Cities* c);
+
+int cities_print(Cities* _Cities);
+
+void cities_dispose(Cities* c);
+
+
+int city_add(Cities* _Cities, char* _Name, float _Latitude, float _Longitude, City** _City);
+
+int city_get_by_index(Cities* _cities, int* _cities_count, int* _index, City** _city);
+
+int city_get_by_name(Cities* _Cities, const char* _Name, City** _CityPtr);
+
+int city_get_temperature(Cities* _Cities, City* _City/* , float* _Temperature */);
+
+void city_remove(Cities* _Cities, City* _City);
+
+#endif 

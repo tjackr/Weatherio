@@ -1,15 +1,12 @@
-#ifndef MISC_H
-#define MISC_H
+#ifndef __MISC_H__
+#define __MISC_H__
 
 void clear_input();
 
-void lowercase_string(char* input);
+void lowercase_string(char* _input);
 
-int yes_or_no(char *question);
+int line_count(const char* _string);
 
-int line_count(const char* string);
-
-void save_json_to_file (const char* json, char* filename);
-
+char* strdup(const char* _str);
 
 #endif

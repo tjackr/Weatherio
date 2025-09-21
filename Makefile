@@ -11,9 +11,9 @@ SRC_DIR := src
 # Detta är en enkel variabel definition
 BUILD_DIR := build
 
-# Flaggor: standard, varningar, optimering + auto-dep för headers 
+# Flaggor: standard, varningar, optimering + auto-dep för headers
 # Detta är en enkel variabel definition
-CFLAGS := -std=c89 -Wall -Wextra -MMD -MP
+CFLAGS := -std=c89 -Wall -Wextra -MMD -MP -Iincludes -g # -g adds source code to binary so that we can debug using gdb
 
 # Länkarflaggor
 # Detta är en enkel variabel definition
@@ -64,7 +64,7 @@ $(BIN): $(OBJ)
 # Samma här, detta är en funktion som anropas inifrån (av '$(BIN)' målet)
 # Om varje enskild .o fil saknas eller är äldre än sin motsvarande .c fil (eller någon header via dep-filen), körs denna regel för att kompilera.
 # Det ser vi på raden efter : som säger att varje .o fil i $(BUILD_DIR) beror på motsvarande .c fil i $(SRC_DIR)
-# Det den gör är att den kör denna regel för varje fil som matchar mönstret, exempelvis: 
+# Det den gör är att den kör denna regel för varje fil som matchar mönstret, exempelvis:
 #   $(BUILD_DIR)/subfolder/test.o: $(SRC_DIR)/subfolder/test.c
 #   $(BUILD_DIR)/main.o: $(SRC_DIR)/main.c
 # 	osv...

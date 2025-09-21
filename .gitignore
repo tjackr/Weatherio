@@ -56,3 +56,12 @@ dkms.conf
 
 # No build-files
 build/*
+
+# No external folder (needed files from these should be copied/linked to includes folder)
+external/*
+
+# No _ files
+_*
+
+# No backup files
+*.bak

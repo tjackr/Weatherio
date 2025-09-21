@@ -2,69 +2,43 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Util for loading large files into a*/
-char** loadfile(char* filename, int* len)
-{
-  /* Step size for the chunk building */ 
-  const int step_size = 10;
+#include "files.h"
 
-  FILE* f = fopen(filename, "r");
-  if (!f)
-  {
-    fprintf(stderr, "Failed to load file: %s\n", filename);
-    return NULL;
-  }
-
-  /* Preallocate a chunk of memory that is going to fill the array */
-  int chunk_size = step_size;
-  char** lines = (char **)malloc(step_size * sizeof(char *));
-
-  int i = 0;
-  char buf[1000];
-  while (fgets(buf, 1000, f))
-  {
+/* Read file contents into a char array using fopen, fseek, fread and manual memory allocation 
+ * Resources: 
+ * https://cplusplus.com/reference/cstdio/fread
+ * */
+const char* load_file_as_string(const char* _filename) {
     
-    int slen = strlen(buf);
+  FILE* file = fopen(_filename, "r");
+  if (!file) { printf("File load error: %s\n", _filename); exit (0); }
+  
+  fseek(file, 0, SEEK_END); /* Seek end of file */
+  int file_size = ftell(file); /* Define filesize based on fseek position */
+  rewind(file); /* rewind to beginning of file */
 
-    /* Handle if we exceed */
-    if (i == chunk_size)
-    {
-      chunk_size += step_size; /* Increment the chunk size by the step size */
-      char** newlines = realloc(lines, 20 *  sizeof(char*));
-      if (newlines == NULL)
-      {
-        printf("Couldn't reallocate new lines\n");
-        exit(0);
-      }
-    }
+  char* buffer = (char*)malloc(sizeof(char)*file_size);
+  if (buffer == NULL) { printf("Malloc error"); exit (1); }
+  
+  int result = fread(buffer, 1, file_size, file); /* reads file into buffer and returns the amount of bytes read */
+  if (result != file_size) { printf("File read error"); exit (2); }
 
-    /* Allocate space for the string */
-    char* str = (char *)malloc((slen + 1) * sizeof(char));
-    
-    /* Copy the buffer to str */
-    strcpy(str, buf);
-
-    /* Attach the string to our ptrptr */
-    lines[i] = str;
-
-    i++;
-  }
-
-  fclose(f);
-  return lines;
+  fclose(file);
+  return buffer;
 }
 
 
-/* This doesn't really do anything useful */
-void save_json_to_file (const char* json, char* filename)
+/* This isn't tested yet, but should be useful for when we want to save new city to our citylist */
+int save_string_to_file (const char* _str, char* _filename)
 {
-  FILE* res_json = fopen (filename,"w");
-  if (!res_json)
+  FILE* file = fopen (_filename, "w");
+  if (!file)
   {
-    printf("Error writing to file: %s", (char*)res_json);
-
+    printf("Error opening file: %s", (char*)file);
+    return -1;
   }
-  fputs (json, res_json);
-  fclose (res_json);
-}
+  fputs (_str, file);
+  fclose (file);
 
+  return 0;
+}

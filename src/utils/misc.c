@@ -1,6 +1,9 @@
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+
+#include "misc.h"
 
 /* Clear stdin */
 void clear_input()
@@ -9,46 +12,22 @@ void clear_input()
   while ((ch = getchar()) != '\n' && ch != EOF);
 }
 
-
-void format_name(char* input)
+/* Makes first char uppercase, rest lowercase */
+void format_name(char* _input)
 {
   int i;
-  for (i = 0; i < (int)strlen(input); i++)
+  for (i = 0; i < (int)strlen(_input); i++)
   {
     if (i == 0)
     {
-      input[i] = toupper(input[i]);
+      _input[i] = toupper(_input[i]);
     } else {
-      input[i] = tolower(input[i]);
+      _input[i] = tolower(_input[i]);
     }
   }
 }
 
-int yes_or_no(char* question)
-{
-  char input[2];
-  while (1)
-  {
-    printf("input 1: %s\n", input);
-    printf("%s", question);
-    fgets(input, sizeof(input), stdin);
-    clear_input();
-
-    if (input[1] == '\n') {
-      printf("input 2: %s\n", input);
-      /* If input is yes or no return 1 or 0 */
-      if (input[0] == 'y' || input[0] == 'Y')
-        return 1;
-      else if (input[0] == 'n' || input[0] == 'N')
-        return 0;
-
-    } else {
-      printf("input 3: %s\n", input);
-      printf("Ogiltigt svar!\n");
-    }
-  }
-}
-
+/* Counts lines in a const char* string */
 int line_count(const char* string)
 {
   int i;
@@ -62,11 +41,13 @@ int line_count(const char* string)
   return lc;
 }
 
-/*
-const char* read_file(char* filepath)
-{
-  char *ptr;
-  return
-}
-*/
+/* C89 approved strdup */
+char *strdup(const char *str) {
+  size_t size = strlen(str) + 1;
+  char *copy = (char*)malloc(size);
 
+  if (copy != NULL) 
+    memcpy(copy, str, size);
+
+  return copy;
+}

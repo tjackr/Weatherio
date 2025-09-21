@@ -1,13 +1,21 @@
+#ifndef __HTTP_H__
+#define __HTTP_H__
+
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
-#ifndef HTTP_H
-#define HTTP_H
-
-struct memory_chunk {
-  char *addr;  /* Pointer to adress for chunk */
+typedef struct {
+  char* addr;  /* Pointer to address for chunk */
   size_t size; /* Size of chunk */
-};
+} HTTP;
 
-char* get_meteo_response(char* url, char* response);
+int http_init(HTTP* _data);
+
+int curl_get_response(HTTP* _data, char* _url);
+
+void http_dispose(HTTP* _data);
 
 #endif
