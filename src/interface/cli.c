@@ -42,7 +42,7 @@ int cli_init(Cities* _cities) {
 
     City* selected_city;
     int cities_count = cities_print(_cities); /* Print cities and get count */
-    int input_choice;
+    int input_choice = 0;
 
     printf("\nVälj den stad du vill hämta väderleksdata ifrån: ");
     scanf("%5i", &input_choice);
