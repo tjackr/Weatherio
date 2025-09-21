@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "meteo.h"
-#include "http.h"
+#include "../http/http.h"
 
 int meteo_init(Meteo* _meteo, const char* _api_url)
 {

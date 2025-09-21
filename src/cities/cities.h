@@ -1,7 +1,7 @@
 #ifndef __CITIES_H__
 #define __CITIES_H__
 
-#include "../http/meteo.h"
+#include "../meteo/meteo.h"
 
 typedef struct City City;
 
