@@ -37,7 +37,7 @@ typedef struct
 
 int meteo_init(Meteo* _meteo, const char* _api_url);
 
-int meteo_get_temperature(Meteo* _meteo, float _lat, float _lon/* , float* _temperature */);
+int meteo_get_temperature(Meteo* _meteo, float _lat, float _lon, char* _name/* , float* _temperature */);
 
 void meteo_dispose(Meteo* _meteo);
 

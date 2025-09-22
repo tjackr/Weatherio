@@ -218,7 +218,7 @@ void city_remove(Cities* _cities, City* _city)
 
 int city_get_temperature(Cities* _cities, City* _city/* , float* _temperature */)
 {
-	return meteo_get_temperature(&_cities->meteo, _city->lat, _city->lon/* , _temperature */);
+	return meteo_get_temperature(&_cities->meteo, _city->lat, _city->lon, _city->name/* , _temperature */);
 }
 
 void cities_dispose(Cities* _c)

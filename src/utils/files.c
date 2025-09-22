@@ -4,6 +4,8 @@
 
 #include "files.h"
 
+#include "../includes/cJSON.h"
+
 /* Read file contents into a char array using fopen, fseek, fread and manual memory allocation 
  * Resources: 
  * https://cplusplus.com/reference/cstdio/fread
@@ -41,4 +43,23 @@ int save_string_to_file (const char* _str, char* _filename)
   fclose (file);
 
   return 0;
+}
+
+/*Writes json string to file*/
+int json_handler (char* _str, char* _filename, char* _cityname)
+{
+  printf("JSON Handler called\n");
+   /*write the JSON string to a file*/
+   FILE *fp = fopen(_filename, "w");
+   if (fp == NULL) {
+       printf("Error: Unable to open the file.\n");
+       return 1;
+   }
+
+   printf("%s\n", _filename);
+   fputs(_str, fp);
+   fclose(fp);
+
+
+   return 0;
 }

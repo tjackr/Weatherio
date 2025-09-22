@@ -3,6 +3,8 @@
 #include "meteo.h"
 #include "../http/http.h"
 
+#include "../utils/files.h"
+
 int meteo_init(Meteo* _meteo, const char* _api_url)
 {
 	memset(_meteo, 0, sizeof(Meteo));
@@ -36,7 +38,7 @@ int meteo_build_url(Meteo* _meteo)
   return 0;
 }
 
-int meteo_get_temperature(Meteo* _meteo, float _lat, float _lon/* , float* _temperature */)
+int meteo_get_temperature(Meteo* _meteo, float _lat, float _lon, char* _name/* , float* _temperature */)
 {
 	HTTP http;
 	if (http_init(&http) != 0)
@@ -57,8 +59,24 @@ int meteo_get_temperature(Meteo* _meteo, float _lat, float _lon/* , float* _temp
 	}
 
 
+  char* basepath = "./data/cache/";
+char filepath[512];
+strcpy(filepath, basepath);
+strcat(filepath, _name);
+strcat(filepath, ".json");
+printf("Filepath: %s\n", filepath);
+
+ /* char* filepath = malloc (strlen(basepath) + strlen(_name) + strlen(".json") + 1);
+  if (filepath == NULL) { printf("Malloc error"); exit (1); }
+
+      (strcpy (basepath, filepath));
+      strcpy(_name, filepath[strlen(basepath)]);*/
+
   /* Here we should call our json parser to get current temperature */
 	/* *(_temperature) = 0; */
+	char* http_data = http.addr;
+
+	json_handler (http_data, filepath, (char*)_name);
 
 	return 0;
 }
