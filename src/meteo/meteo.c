@@ -5,6 +5,8 @@
 
 #include "../utils/files.h"
 
+#include "../includes/cJSON.h"
+
 int meteo_init(Meteo* _meteo, const char* _api_url)
 {
 	memset(_meteo, 0, sizeof(Meteo));
@@ -78,8 +80,49 @@ printf("Filepath: %s\n", filepath);
 
 	json_handler (http_data, filepath, (char*)_name);
 
+	cJSON* cjson;
+    FILE *fp = fopen(filepath, "r");
+    if (fp == NULL) {
+        printf("Error: Unable to open the file.\n");
+        return 1;
+    }
+    const char* buffer = load_file_as_string1(filepath);
+
+    /*read the file contents into a string
+
+    char buffer[1024];
+    int len = fread(buffer, 1, sizeof(buffer), fp);
+    fclose(fp);*/
+  printf(buffer);
+
+    /*parse the JSON data*/
+    cjson = cJSON_Parse(buffer);
+    if (cjson == NULL) {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        if (error_ptr != NULL) {
+            printf("Error: %s\n", error_ptr);
+        }
+        cJSON_Delete(cjson);
+        return 1;
+        
+    }
+    cJSON *current_weather = cJSON_GetObjectItemCaseSensitive(cjson, "current_weather");
+    if (cJSON_IsString(current_weather) && (current_weather->valuestring != NULL)) {
+        printf("Current Weather: %s\n", current_weather->valuestring);
+    }
+  
+
+	/*printf(cjson->valuestring);
+
+	cJSON* temperature = cJSON_GetObjectItem(current_weather, "temperature");
+	printf("Current temperature in %s: %.2f °C\n", _name, temperature->valuedouble);*/
+
+
+
 	return 0;
 }
+
+
 
 void meteo_dispose(Meteo* _m)
 {
