@@ -3,6 +3,12 @@
 #include "cli.h"
 #include "../utils/misc.h"
 
+/*============= Internal functions =============*/
+
+int yes_or_no(char* _question);
+
+/*==============================================*/
+
 /* Prints question, takes y/Y/n/N as input, returns 0 for no and 1 for yes */
 int yes_or_no(char* _question)
 {
@@ -28,10 +34,23 @@ int yes_or_no(char* _question)
 }
 
 /* Main CLI loop */
+/* Feel free to add fancier menus and more choices
+ * Maybe more like a main menu with options
+ * Option to add new city for instance
+ * Also remove, so we can rid the world of malmö
+ * */
 int cli_init(Cities* _cities) {
 
   int result;
-  printf("Välkommen till Weatherio!\n\n");
+  printf(
+    "Varmt välkommen till \n"
+    "--------------------\n"
+    "▖  ▖    ▗ ▌     ▘  ▌\n"
+    "▌▞▖▌█▌▀▌▜▘▛▌█▌▛▘▌▛▌▌\n"
+    "▛ ▝▌▙▖█▌▐▖▌▌▙▖▌ ▌▙▌▖\n"
+    "--------------------\n\n\n"
+    "Börja med att välja den stad du vill se väder från.\n\n"
+  );
 
   int go_again;
   do
@@ -44,7 +63,7 @@ int cli_init(Cities* _cities) {
     int cities_count = cities_print(_cities); /* Print cities and get count */
     int input_choice = 0;
 
-    printf("\nVälj den stad du vill hämta väderleksdata ifrån: ");
+    printf("\nVälj stad: ");
     scanf("%5i", &input_choice);
     clear_input();
 
@@ -52,18 +71,34 @@ int cli_init(Cities* _cities) {
     {
       result = city_get_by_index(_cities, &cities_count, &input_choice, &selected_city);
       if (result != 0) {
-        printf("Failed to get chosen city, returned: %i\n", result);
+        printf("Något gick fel med att hämta tillgängliga städer! (Kod: %i)\n", result);
         return (-2);
       }
 
-      result = city_get_temperature(_cities, selected_city);
+      result = city_get_temperature(selected_city);
       if (result != 0) {
-        printf("Failed to get temperature for city, returned: %i\n", result);
-        return (-3);
+        printf("Något gick fel med att hämta väderdata! (Kod: %i)\n", result);
       }
-
-      /* printf("Du har valt: %s.\n", selected_city->name); */
-
+      else
+      {
+        printf("\n"
+          "*** Vädret i %s: \n"
+          "**\n"
+          "*   Temperatur: %.1lf %s\n"
+          "*   Vindstyrka: %.1lf %s\n"
+          "**  Vindriktning: %.0lf %s\n"
+          "*** Nederbörd: %.2lf%s\n" 
+          "***********************\n\n",
+          selected_city->name,
+          selected_city->weather->temperature,
+          selected_city->weather->temperature_unit,
+          selected_city->weather->windspeed,
+          selected_city->weather->windspeed_unit,
+          selected_city->weather->winddirection,
+          selected_city->weather->winddirection_unit,
+          selected_city->weather->precipitation,
+          selected_city->weather->precipitation_unit);
+      }
     }
     else {
       printf("\nOgiltigt svar! Välj en siffra ur listan...");
@@ -73,7 +108,7 @@ int cli_init(Cities* _cities) {
 
     if (go_again == 0)
     {
-      go_again = yes_or_no("\nVill du välja en annan stad?");
+      go_again = yes_or_no("\nVill du välja en ny stad?");
     }
 
     printf("\n");

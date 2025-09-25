@@ -3,8 +3,6 @@
 
 #include "../cities/cities.h"
 
-int yes_or_no(char* _question);
-
 int cli_init(Cities* _cities);
 
 #endif

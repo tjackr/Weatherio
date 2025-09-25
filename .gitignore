@@ -60,6 +60,9 @@ build/*
 # No external folder (needed files from these should be copied/linked to includes folder)
 external/*
 
+# No cache files
+data/cache/*
+
 # No _ files
 _*
 

@@ -14,7 +14,7 @@ typedef struct {
 
 int http_init(HTTP* _data);
 
-int curl_get_response(HTTP* _data, char* _url);
+int curl_get_response(HTTP* _data, const char* _url);
 
 void http_dispose(HTTP* _data);
 

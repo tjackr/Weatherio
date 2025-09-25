@@ -4,27 +4,26 @@
 #include <string.h>
 #include "../utils/files.h"
 #include "../utils/misc.h"
-#include "../http/http.h"
 
-/* -------------Internal function definitions---------------- */
+/*============= Internal functions =============*/
 
 void cities_parse_list(Cities* _cities, const char* _list);
 
-/* ---------------------------------------------------------- */
+/*==============================================*/
 
 int cities_init(Cities* _cities)
 {
-  const char* cities_list_string = load_file_as_string("data/city_coords.txt");
-  if (cities_list_string == NULL) { 
+  FileString cities_list_string = create_file_string("data/city_coords.txt");
+  if (cities_list_string.data == NULL) { 
     printf("Loading cities from file failed, exiting.\n"); 
     exit (0); 
   }
 
 	memset(_cities, 0, sizeof(Cities));
 	
-	cities_parse_list(_cities, cities_list_string);
-
-	meteo_init(&_cities->meteo, "https://api.open-meteo.com/v1/forecast");
+	cities_parse_list(_cities, cities_list_string.data);
+  
+  destroy_file_string(&cities_list_string); /* Free the memory of filestring */
 
 	return 0;
 }
@@ -42,7 +41,7 @@ int cities_print(Cities* _cities)
   int i = 0;
 	do
 	{
-		printf("  %i - %s, Latitude: %.4f, Longitude: %.4f\n", i+1, current->name, current->lat, current->lon);
+		printf("  (%i) - %s, Latitude: %.4f, Longitude: %.4f\n", i+1, current->name, current->lat, current->lon);
 		current = current->next;
     i++;
 
@@ -109,6 +108,12 @@ void cities_parse_list(Cities* _cities, const char* _cities_string)
 
 int city_add(Cities* _cities, char* _name, float _lat, float _lon, City** _city)
 {
+  /*
+   * We might wanna add cities as json like:
+   char* basepath = 'data/cities/'
+   char filepath[(strlen(basepath) + strlen(_name) + strlen(".json"))]; 
+   */
+
 	City* new_city = (City*)malloc(sizeof(City));
 	if (new_city == NULL)
 	{
@@ -122,6 +127,11 @@ int city_add(Cities* _cities, char* _name, float _lat, float _lon, City** _city)
 	
 	new_city->prev = NULL;
 	new_city->next = NULL;
+
+  Weather weather = {0};
+  Forecast forecast = {0};
+  new_city->weather = &weather;
+  new_city->forecast = &forecast;
 
 	if (_cities->tail == NULL)
 	{
@@ -168,7 +178,6 @@ int city_get_by_name(Cities* _cities, const char* _name, City** _city)
 /* Get city by its index in the cities linked list */
 int city_get_by_index(Cities* _cities, int* _cities_count, int* _index, City** _city)
 {
-
   City* current = _cities->head;
   if (current == NULL)
     return -1;
@@ -190,22 +199,22 @@ int city_get_by_index(Cities* _cities, int* _cities_count, int* _index, City** _
 void city_remove(Cities* _cities, City* _city)
 {
   
-	if (_city->next == NULL && _city->prev == NULL)  /* I'm alone */
+	if (_city->next == NULL && _city->prev == NULL)  /* I'm alone :( */
 	{
 		_cities->head = NULL;
 		_cities->tail = NULL;
 	}
-	else if (_city->prev == NULL)                    /* I'm first */
+	else if (_city->prev == NULL)                    /* I'm first :) */
 	{
 		_cities->head = _city->next;
 		_city->next->prev = NULL;
 	}
-	else if (_city->next == NULL)                    /* I'm last */
+	else if (_city->next == NULL)                    /* I'm last :/ */
 	{
 		_cities->tail = _city->prev;
 		_city->prev->next = NULL;
 	}
-	else                                            /* I'm in the middle */
+	else                                            /* I'm in the middle :| */
 	{
 		_city->prev->next = _city->next;
 		_city->next->prev = _city->prev;
@@ -216,11 +225,13 @@ void city_remove(Cities* _cities, City* _city)
 	free(_city);
 }
 
-int city_get_temperature(Cities* _cities, City* _city/* , float* _temperature */)
+int city_get_temperature(City* _city)
 {
-	return meteo_get_temperature(&_cities->meteo, _city->lat, _city->lon, _city->name/* , _temperature */);
+  /* Call meteo without direct mention of what City nor Cities is */
+	return meteo_get_current_weather(_city->lat, _city->lon, _city->weather /* , _temperature */);
 }
 
+/* Dispose of cities struct */
 void cities_dispose(Cities* _c)
 {
 	_c++;

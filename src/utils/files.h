@@ -1,13 +1,23 @@
 #ifndef __FILES_H__
 #define __FILES_H__
+
+#include <stdarg.h>
 #include "../includes/cJSON.h"
+
+/* Struct for safe handling of dynamically allocated strings from files */
+typedef struct {
+  char*   data;
+  int     size;
+} FileString;
 
 const char* load_file_as_string(const char* _filename);
 
-int save_string_to_file (const char* _str, char* _filename);
+FileString create_file_string(const char* _filename);
 
-int json_handler (char* _str, char* _filename, char* _cityname);
+void destroy_file_string(FileString* fstr);
 
-int json_parser (char* _str, cJSON* cjson_object);
+int write_string_to_file(const char* _str, const char* _filename);
+
+int json_parse(cJSON** _cjson_object, const char* _raw_text, int _text_len);
 
 #endif

@@ -15,6 +15,7 @@ typedef struct City
 	float     lon;
 
   Weather*  weather;
+  Forecast* forecast;
 
 } City;
 
@@ -22,8 +23,6 @@ typedef struct
 {
 	City*     head;
 	City*     tail;
-
-	Meteo     meteo;
 
 } Cities;
 
@@ -41,7 +40,7 @@ int city_get_by_index(Cities* _cities, int* _cities_count, int* _index, City** _
 
 int city_get_by_name(Cities* _Cities, const char* _Name, City** _CityPtr);
 
-int city_get_temperature(Cities* _Cities, City* _City/* , float* _Temperature */);
+int city_get_temperature(City* _City/* , float* _Temperature */);
 
 void city_remove(Cities* _Cities, City* _City);
 

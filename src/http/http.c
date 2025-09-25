@@ -47,7 +47,7 @@ size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _data)
   return realsize; /* We return the size of the chunk... */
 }
 
-int curl_get_response(HTTP* _data, char* _url)
+int curl_get_response(HTTP* _data, const char* _url)
 {
   CURL *curl;
   CURLcode res;
@@ -83,10 +83,7 @@ int curl_get_response(HTTP* _data, char* _url)
     printf("Response size:\n%lu\n", (unsigned long)data.size);
     #endif
   }
-  
-  printf("%s\n", _data->addr);
 
-  /* We are done, clean up curl and free the data from memory 🐦 */
   curl_easy_cleanup(curl);
   curl_global_cleanup();
   /* free(_data->addr); */
@@ -94,8 +91,8 @@ int curl_get_response(HTTP* _data, char* _url)
   return 0;
 }
 
+/* Caller needs to free the data from memory when they're done using it 🐦 */
 void http_dispose(HTTP* _data)
 {
-  /* _data++; */
   free(_data);
 }

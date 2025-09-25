@@ -13,7 +13,7 @@ BUILD_DIR := build
 
 # Flaggor: standard, varningar, optimering + auto-dep för headers
 # Detta är en enkel variabel definition
-CFLAGS := -std=c89 -Wall -Wextra -MMD -MP -Iincludes -g # -g adds source code to binary so that we can debug using gdb
+CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -g # -g adds source code to binary so that we can debug using gdb
 
 # Länkarflaggor
 # Detta är en enkel variabel definition
@@ -71,7 +71,7 @@ $(BIN): $(OBJ)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@echo "Compiling $<..."
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 # Hjälpmål: kör programmet om det är byggt
 # Se det som en function anropas utifrån (make run)
