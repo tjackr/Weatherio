@@ -5,7 +5,7 @@
 
 #include "meteo.h"
 #include "../http/http.h"
-#include "../includes/cJSON.h"
+#include "../includes/jansson/jansson.h"
 #include "../includes/md5.h"
 #include "../utils/files.h"
 #include "../utils/misc.h"
@@ -18,7 +18,7 @@ int meteo_define_filepath(char** _filepath, const char* _url);
 
 int meteo_update_cache(const char* _filepath, const char* _url);
 
-int meteo_set_current_weather(const char* _filepath, Weather* _weather);
+int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t** _full_json);
 
 /*==============================================*/
 
@@ -65,12 +65,15 @@ int meteo_build_url(char* _url, float _lat, float _lon, bool _current)
 /* Defines a path name to a cache file based on the url used */
 int meteo_define_filepath(char** _filepath, const char* _url)
 {
-  const char* hashed_url = MD5_HashToString(_url, strlen(_url));
+ const char* hashed_url = MD5_HashToString(_url, strlen(_url));
+
+  /* Create cache directory if it doesn't exist */
+  create_directory_if_not_exists("./data/cache");
 
   /* Define the filepath for our json cache */
   char* basepath = "./data/cache/";
-  int path_size = (strlen(basepath) + strlen(hashed_url) + strlen(".json"));
-  *_filepath = (char*)malloc(sizeof(char) * path_size); /* We calculate the size of filepath */
+  int path_size = (strlen(basepath) + strlen(hashed_url) + strlen(".json") + 1);
+  *_filepath = (char*)malloc(sizeof(char) * path_size);
 
   strcpy(*_filepath, basepath);
   strcat(*_filepath, hashed_url);
@@ -120,6 +123,15 @@ int meteo_update_cache(const char* _filepath, const char* _url)
 		return -2;
 	}
 
+   /* Validate JSON before saving */
+    json_error_t error;
+    json_t* json = json_loadb(http.addr, http.size, 0, &error);
+    if (json == NULL) {
+        printf("Invalid JSON received from API: %s\n", error.text);
+        http_dispose(&http);
+        return -3;
+    }
+
   /*  
    * THIS SHOULD PROBABLY BE PARSED FIRST
    * */
@@ -128,121 +140,84 @@ int meteo_update_cache(const char* _filepath, const char* _url)
 	if (result != 0)
 	{
 		printf("Failed to write JSON to file: %i\n", result);
-		return -3;
+		return -4;
 	}
 
-
+  json_decref(json);
   return 0; 
 }
 
 /* Set current weather values to City's Meteo's Weather struct*/
-int meteo_set_current_weather(const char* _filepath, Weather* _weather)
+int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t** _full_json)
 {
-  /* This is very quick and dirty for now
-   *
-   * It segfaults and shits the bed if it can't find the correct json object
-   *
-   * Should make a proper for loop through these...
-   * probably best to use cJSON array functionality to dynamically build entire json tree
-   * then look for certain keywords and match them with Weather struct members somehow
-   *
-   * Any way to make this look cleaner is appreciated
-   */
-  
-  /* Declare our objects */
-  cJSON* json = NULL;
-  const cJSON* current_weather = NULL;
-  const cJSON* temperature = NULL;
-  const cJSON* current_weather_units = NULL;
-  const cJSON* temperature_unit = NULL;
-  const cJSON* timestamp = NULL;
-  const cJSON* weathercode = NULL;
-  const cJSON* windspeed = NULL;
-  const cJSON* windspeed_unit = NULL;
-  const cJSON* winddirection = NULL;
-  const cJSON* winddirection_unit = NULL;
-  const cJSON* precipitation = NULL;
-  const cJSON* precipitation_unit = NULL;
-
-  /* Parse the json file */
-  FileString json_file = create_file_string(_filepath);
-  json_parse(&json, json_file.data, json_file.size);
-  destroy_file_string(&json_file);
-
-  if (json == NULL)
-  {
-    printf("Failed to parse meteo JSON root\n");
-    cJSON_Delete(json);
+  json_t* json = json_load_from_file(_filepath);
+  if (json == NULL) {
+    printf("Failed to load JSON from file: %s\n", _filepath);
     return -1;
   }
-  
-  /* Get parents */
-  current_weather = cJSON_GetObjectItemCaseSensitive(json, "current");
-  current_weather_units = cJSON_GetObjectItemCaseSensitive(json, "current_units");
 
-  if (current_weather == NULL ||
-      current_weather_units == NULL)
-  {
-    printf("Failed to get meteo json parents\n");
-    cJSON_Delete(json);
+  /* Get main objects */
+  json_t* current_weather = json_object_get(json, "current");
+  json_t* current_weather_units = json_object_get(json, "current_units");
+
+  if (!current_weather || !current_weather_units) {
+    printf("Failed to get weather data objects from JSON\n");
+    json_decref(json);
     return -2;
   }
 
-  /* Get children */
-  timestamp = cJSON_GetObjectItemCaseSensitive(current_weather, "time");
-  weathercode = cJSON_GetObjectItemCaseSensitive(current_weather, "weather_code");
-  temperature = cJSON_GetObjectItemCaseSensitive(current_weather, "temperature_2m");
-  windspeed = cJSON_GetObjectItemCaseSensitive(current_weather, "wind_speed_10m");
-  winddirection = cJSON_GetObjectItemCaseSensitive(current_weather, "wind_direction_10m");
-  precipitation = cJSON_GetObjectItemCaseSensitive(current_weather, "precipitation");
+  /* Get weather values */
+  json_t* temperature = json_object_get(current_weather, "temperature_2m");
+  json_t* windspeed = json_object_get(current_weather, "wind_speed_10m");
+  json_t* winddirection = json_object_get(current_weather, "wind_direction_10m");
+  json_t* precipitation = json_object_get(current_weather, "precipitation");
+  json_t* weather_code = json_object_get(current_weather, "weather_code");
 
-  temperature_unit = cJSON_GetObjectItemCaseSensitive(current_weather_units, "temperature_2m");
-  windspeed_unit = cJSON_GetObjectItemCaseSensitive(current_weather_units, "wind_speed_10m");
-  winddirection_unit = cJSON_GetObjectItemCaseSensitive(current_weather_units, "wind_direction_10m");
-  precipitation_unit = cJSON_GetObjectItemCaseSensitive(current_weather_units, "precipitation");
+  /* Get units */
+  json_t* temperature_unit = json_object_get(current_weather_units, "temperature_2m");
+  json_t* windspeed_unit = json_object_get(current_weather_units, "wind_speed_10m");
+  json_t* winddirection_unit = json_object_get(current_weather_units, "wind_direction_10m");
+  json_t* precipitation_unit = json_object_get(current_weather_units, "precipitation");
 
-  if (current_weather == NULL ||
-    temperature == NULL ||
-    current_weather_units == NULL ||
-    temperature_unit == NULL ||
-    timestamp == NULL ||
-    weathercode == NULL ||
-    windspeed == NULL ||
-    windspeed_unit == NULL ||
-    winddirection == NULL ||
-    winddirection_unit == NULL ||
-    precipitation == NULL ||
-    precipitation_unit == NULL)
-  {
-    printf("Failed to get meteo json children\n");
-    cJSON_Delete(json);
+  /* Validate all required fields are present */
+  if (!json_is_number(temperature) || !json_is_string(temperature_unit) ||
+      !json_is_number(windspeed) || !json_is_string(windspeed_unit) ||
+      !json_is_number(winddirection) || !json_is_string(winddirection_unit) ||
+      !json_is_number(precipitation) || !json_is_string(precipitation_unit) ||
+      !json_is_integer(weather_code)) {
+    printf("Missing or invalid weather data fields in JSON\n");
+    json_decref(json);
     return -3;
   }
 
-  /* Should also use proper handling for these using cJSON_IsString etc. */
-  _weather->temperature = temperature->valuedouble;
-  _weather->temperature_unit = strdup(temperature_unit->valuestring);
+  /* Set weather struct values */
+  _weather->temperature = json_number_value(temperature);
+  _weather->temperature_unit = strdup(json_string_value(temperature_unit));
 
-  _weather->windspeed = windspeed->valuedouble;
-  _weather->windspeed_unit = strdup(windspeed_unit->valuestring);
+  _weather->windspeed = json_number_value(windspeed);
+  _weather->windspeed_unit = strdup(json_string_value(windspeed_unit));
 
-  /* Would be cool also to have a function that sets named direction like northeast for these */
-  _weather->winddirection = winddirection->valuedouble;
-  _weather->winddirection_unit = strdup(winddirection_unit->valuestring);
+  _weather->winddirection = json_number_value(winddirection);
+  _weather->winddirection_unit = strdup(json_string_value(winddirection_unit));
 
-  _weather->precipitation = precipitation->valuedouble;
-  _weather->precipitation_unit = strdup(precipitation_unit->valuestring);
+  _weather->precipitation = json_number_value(precipitation);
+  _weather->precipitation_unit = strdup(json_string_value(precipitation_unit));
 
-  _weather->timestamp = 0; /* Should parse time to seconds for proper stamping */
-  _weather->weather_code = weathercode->valueint;
+  _weather->weather_code = json_integer_value(weather_code);
+  
+  if (_full_json != NULL) {
+        *_full_json = json;
+        json_incref(json); /* Increase reference count so it doesn't get freed */
+    }
 
-  /* Clean up cJSON */
-  cJSON_Delete(json);
+
+  /* Clean up */
+  json_decref(json);
 
   return 0; 
 }
 
-int meteo_get_current_weather(float _lat, float _lon, Weather* _weather)
+int meteo_get_current_weather(float _lat, float _lon, Weather* _weather, json_t** _full_json)
 {
   int result = 0;
 
@@ -264,7 +239,7 @@ int meteo_get_current_weather(float _lat, float _lon, Weather* _weather)
   if (result != 0)
     return result;
 
-  result = meteo_set_current_weather(filepath, _weather);
+  result = meteo_set_current_weather(filepath, _weather, _full_json);
   if (result != 0)
     return result;
 

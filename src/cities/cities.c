@@ -9,23 +9,31 @@
 
 void cities_parse_list(Cities* _cities, const char* _list);
 
+void save_city_weather_data(const char* city_name, float lat, float lon, json_t* weather_json);
+
 /*==============================================*/
 
 int cities_init(Cities* _cities)
 {
-  FileString cities_list_string = create_file_string("data/city_coords.txt");
-  if (cities_list_string.data == NULL) { 
-    printf("Loading cities from file failed, exiting.\n"); 
-    exit (0); 
-  }
+    /* Create basic directories */
+    if (create_directory_if_not_exists("./data") != 0 ||
+        create_directory_if_not_exists("./data/cache") != 0) {
+        printf("Failed to create data directories\n");
+    }
 
-	memset(_cities, 0, sizeof(Cities));
-	
-	cities_parse_list(_cities, cities_list_string.data);
-  
-  destroy_file_string(&cities_list_string); /* Free the memory of filestring */
+    memset(_cities, 0, sizeof(Cities));
 
-	return 0;
+    /* Fallback to text file if JSON doesn't exist */
+    FileString cities_list_string = create_file_string("data/city_coords.txt");
+    if (cities_list_string.data == NULL) { 
+        printf("Loading cities from file failed, exiting.\n"); 
+        exit(0); 
+    }
+
+    cities_parse_list(_cities, cities_list_string.data);
+    destroy_file_string(&cities_list_string);
+
+    return 0;
 }
 
 /* Prints list of cities and returns their count */
@@ -104,6 +112,7 @@ void cities_parse_list(Cities* _cities, const char* _cities_string)
 		ptr++;
 
 	} while (*ptr != '\0'); /* Unless next pointer is a null terminator we keep going */
+	free(list_copy);
 }
 
 int city_add(Cities* _cities, char* _name, float _lat, float _lon, City** _city)
@@ -115,40 +124,39 @@ int city_add(Cities* _cities, char* _name, float _lat, float _lon, City** _city)
    */
 
 	City* new_city = (City*)malloc(sizeof(City));
-	if (new_city == NULL)
-	{
-		printf("Failed to allocate memory for new City\n");
-		return -1;
-	}
+    if (new_city == NULL)
+    {
+        printf("Failed to allocate memory for new City\n");
+        return -1;
+    }
 
-	new_city->name = _name;
-	new_city->lat = _lat;
-	new_city->lon = _lon;
-	
-	new_city->prev = NULL;
-	new_city->next = NULL;
+    new_city->name = strdup(_name); /* Fix: create copy instead of pointing to stack */
+    new_city->lat = _lat;
+    new_city->lon = _lon;
+    
+    new_city->prev = NULL;
+    new_city->next = NULL;
 
-  Weather weather = {0};
-  Forecast forecast = {0};
-  new_city->weather = &weather;
-  new_city->forecast = &forecast;
+    /* Initialize as NULL, allocate when needed */
+    new_city->weather = NULL;
+    new_city->forecast = NULL;
 
-	if (_cities->tail == NULL)
-	{
-		_cities->head = new_city;
-		_cities->tail = new_city;
-	}
-	else
-	{
-		new_city->prev = _cities->tail;
-		_cities->tail->next = new_city;
-		_cities->tail = new_city;
-	}
-	
-	if (_city != NULL)
-		*_city = new_city;
+    if (_cities->tail == NULL)
+    {
+        _cities->head = new_city;
+        _cities->tail = new_city;
+    }
+    else
+    {
+        new_city->prev = _cities->tail;
+        _cities->tail->next = new_city;
+        _cities->tail = new_city;
+    }
+    
+    if (_city != NULL)
+        *_city = new_city;
 
-	return 0;
+    return 0;
 }
 
 /* Get city by corresponding name */
@@ -227,8 +235,66 @@ void city_remove(Cities* _cities, City* _city)
 
 int city_get_temperature(City* _city)
 {
-  /* Call meteo without direct mention of what City nor Cities is */
-	return meteo_get_current_weather(_city->lat, _city->lon, _city->weather /* , _temperature */);
+    /* Allocate weather struct if not already allocated */
+    if (_city->weather == NULL) {
+        _city->weather = (Weather*)calloc(1, sizeof(Weather));
+        if (_city->weather == NULL) {
+            printf("Failed to allocate memory for weather data\n");
+            return -1;
+        }
+    }
+    
+    /* Call meteo without direct mention of what City nor Cities is */
+	json_t* full_weather_json = NULL;
+    int result = meteo_get_current_weather(_city->lat, _city->lon, _city->weather, &full_weather_json);
+    
+    /* Save weather data to city-specific file */
+    if (result == 0 && full_weather_json != NULL) {
+       /* json_t* weather_json = json_object();
+        json_object_set_new(weather_json, "temperature", json_real(_city->weather->temperature));
+        json_object_set_new(weather_json, "temperature_unit", json_string(_city->weather->temperature_unit));
+        json_object_set_new(weather_json, "windspeed", json_real(_city->weather->windspeed));
+        json_object_set_new(weather_json, "windspeed_unit", json_string(_city->weather->windspeed_unit));
+        json_object_set_new(weather_json, "winddirection", json_real(_city->weather->winddirection));
+        json_object_set_new(weather_json, "winddirection_unit", json_string(_city->weather->winddirection_unit));
+        json_object_set_new(weather_json, "precipitation", json_real(_city->weather->precipitation));
+        json_object_set_new(weather_json, "precipitation_unit", json_string(_city->weather->precipitation_unit));
+        json_object_set_new(weather_json, "weather_code", json_integer(_city->weather->weather_code));
+
+        save_city_weather_data(_city->name, _city->lat, _city->lon, weather_json); 
+        json_decref(weather_json);*/
+		save_city_weather_data(_city->name, _city->lat, _city->lon, full_weather_json);
+    	json_decref(full_weather_json);
+    }
+    
+    return result;
+}
+
+void save_city_weather_data(const char* city_name, float lat, float lon, json_t* weather_json)
+{
+    create_directory_if_not_exists("./data/weather");
+    
+    char filepath[256];
+    snprintf(filepath, sizeof(filepath), "./data/weather/%s.json", city_name);
+    
+    
+    /* Create new JSON with city info */
+    json_t* city_data = json_object();
+    json_object_set_new(city_data, "city_name", json_string(city_name));
+    json_object_set_new(city_data, "latitude", json_real(lat));
+    json_object_set_new(city_data, "longitude", json_real(lon));
+    
+    /* Copy current section from cache */
+    json_t* current = json_object_get(weather_json, "current");
+          json_object_set_new(city_data, "current", json_deep_copy(current));
+       
+    /* Copy current_units section from cache */
+    json_t* current_units = json_object_get(weather_json, "current_units");
+        json_object_set_new(city_data, "current_units", json_deep_copy(current_units));
+
+    
+    json_save_to_file(city_data, filepath);
+    json_decref(city_data);
 }
 
 /* Dispose of cities struct */

@@ -1,4 +1,3 @@
-
 # C-kompilator (byt vid behov, t.ex. clang)
 # Detta är en enkel variabel definition
 CC := gcc
@@ -13,7 +12,7 @@ BUILD_DIR := build
 
 # Flaggor: standard, varningar, optimering + auto-dep för headers
 # Detta är en enkel variabel definition
-CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -g # -g adds source code to binary so that we can debug using gdb
+CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-parameter -Wno-format-truncation -g # -g adds source code to binary so that we can debug using gdb
 
 # Länkarflaggor
 # Detta är en enkel variabel definition
@@ -21,7 +20,7 @@ LDFLAGS := -flto -Wl,--gc-sections
 
 # Bibliotek att länka mot
 # Detta är en enkel variabel definition
-LIBS := -lcurl
+LIBS := -lcurl -ljansson 
 
 # Hittar alla .c filer rekursivt i katalogen.
 #Den anropar 'find' kommandot i Linux och formaterar resultatet som en lista på sökvägar med mellanslag mellan varje

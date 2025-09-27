@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <ctype.h>
+#include <errno.h>
 
 #include "files.h"
 
@@ -97,24 +99,70 @@ int write_string_to_file(const char* _str, const char* _filename)
 }
 
 /*json parser*/
-int json_parse(cJSON** _cjson_object, const char* _raw_text, int _text_len)
+int json_parse(json_t **json_object, const char* raw_text, int text_len)
 {
-  if (_raw_text == NULL)
-  {
-    printf("No text to parse as JSON!\n");
-    return -1;
-  }
-
-  *_cjson_object = cJSON_ParseWithLength(_raw_text, _text_len);
-  if (_cjson_object == NULL) 
-  {
-    const char *error_ptr = cJSON_GetErrorPtr();
-    if (error_ptr != NULL) {
-        printf("Error parsing filestring: %s\n", error_ptr);
+    if (raw_text == NULL) {
+        printf("No text to parse as JSON!\n");
+        return -1;
     }
-    cJSON_Delete(*_cjson_object);
-    return -2;
-  }
 
-  return 0;
+    json_error_t error;
+    *json_object = json_loadb(raw_text, text_len, 0, &error);
+
+    if (*json_object == NULL) {
+        printf("Error parsing JSON at line %d: %s\n", error.line, error.text);
+        return -2;
+    }
+    return 0;  
+}
+bool directory_exists(const char *path) {
+    struct stat buffer;
+    if (stat(path, &buffer) == 0) {
+        return S_ISDIR(buffer.st_mode);
+    }
+    return false;
+}
+
+int create_directory_if_not_exists(const char* _path) {
+    if (directory_exists(_path)) {
+        return 0;
+    }
+    
+    if (mkdir(_path, 0755) == -1) {
+        if (errno != EEXIST) {
+            printf("Failed to create directory '%s': %s\n", _path, strerror(errno));
+            return -1;
+        }
+    }
+    
+    return 0;
+}
+
+json_t* json_load_from_file(const char* _filename)
+{
+    json_error_t error;
+    json_t* json = json_load_file(_filename, 0, &error);
+    
+    if (json == NULL) {
+        printf("Error loading JSON from file '%s' at line %d, column %d: %s\n", 
+               _filename, error.line, error.column, error.text);
+        return NULL;
+    }
+    
+    return json;
+}
+
+int json_save_to_file(json_t* _json, const char* _filename)
+{
+    if (_json == NULL) {
+        printf("JSON object is NULL\n");
+        return -1;
+    }
+    
+    if (json_dump_file(_json, _filename, JSON_INDENT(2) | JSON_PRESERVE_ORDER) != 0) {
+        printf("Error saving JSON to file '%s'\n", _filename);
+        return -2;
+    }
+    
+    return 0;
 }

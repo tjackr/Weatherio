@@ -1,6 +1,8 @@
 #ifndef __Meteo_h__
 #define __Meteo_h__
 
+#include "../includes/jansson/jansson.h"
+
 #define METEO_BASE_URL "https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f%s"
 
 typedef struct
@@ -38,6 +40,6 @@ typedef struct
 } Meteo;
 */
 
-int meteo_get_current_weather(float _lat, float _lon, Weather* weather);
+int meteo_get_current_weather(float _lat, float _lon, Weather* weather, json_t** _full_json);
 
 #endif 
