@@ -13,7 +13,7 @@ BUILD_DIR := build
 
 # Flaggor: standard, varningar, optimering + auto-dep för headers
 # Detta är en enkel variabel definition
-CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -g # -g adds source code to binary so that we can debug using gdb
+CFLAGS := -std=c89 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -g # -g adds source code to binary so that we can debug using gdb
 
 # Länkarflaggor
 # Detta är en enkel variabel definition

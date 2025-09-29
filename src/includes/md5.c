@@ -311,9 +311,9 @@ const char* MD5_HashToString(const void* _data, int _size)
 		buffer[8], buffer[9], buffer[10], buffer[11],
 		buffer[12], buffer[13], buffer[14], buffer[15]);
 	*/
-
+  int i;
   /* Scary C89 non-snprintf implementation */
-  for(int i = 0; i < 16; ++i)
+  for(i = 0; i < 16; ++i)
     sprintf(&g_MD5_String[i*2], "%02x", (unsigned int)buffer[i]);
 
 	return g_MD5_String;
