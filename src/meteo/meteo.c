@@ -28,9 +28,9 @@ int meteo_build_url(char* _url, float _lat, float _lon, bool _current)
   char* params;
 
   if (_current)
-    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m";
+    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Europe%2FBerlin";
   else
-    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m";
+    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Europe%2FBerlin";
 
   /* Might wanna handle this more safely C89 style */
   sprintf(_url, 
@@ -61,7 +61,23 @@ int meteo_define_filepath(char** _filepath, const char* _url)
 
   return 0;
 }
+time_t parse_time_string(const char *time_str) {
+    struct tm tm = {0};
+    int year, month, day, hour, min;
 
+    if (sscanf(time_str, "%4d-%2d-%2dT%2d:%2d", &year, &month, &day, &hour, &min) != 5) {
+        return (time_t)-1;  // parsing error
+    }
+
+    tm.tm_year = year - 1900;  // struct tm years since 1900
+    tm.tm_mon = month - 1;     // struct tm months are zero-based
+    tm.tm_mday = day;
+    tm.tm_hour = hour;
+    tm.tm_min = min;
+    tm.tm_isdst = -1; // Not considering daylight saving time
+
+    return mktime(&tm);
+}
 /* See if we have weather cache, call API if not */
 int meteo_update_cache(const char* _filepath, const char* _url)
 {
@@ -72,18 +88,52 @@ int meteo_update_cache(const char* _filepath, const char* _url)
 	struct stat file_info;
 	if (stat(_filepath, &file_info) == 0)
 	{
-		time_t now = time(NULL);
-		double time_diff = difftime(now, file_info.st_mtime);
+
+    int interval;
+    char* str_timestamp;
+
+    json_t* json_current = json_object_get(json_load_from_file(_filepath), "current");
+    json_t* json_interval = json_object_get(json_current, "interval");
+    json_t* json_timestamp = json_object_get(json_current, "time");
+
+    if (!json_is_integer(json_interval) && json_integer_value(json_interval) == 0) {
+        
+        return -1;
+    }
+
+    interval = json_integer_value(json_interval);
+
+    if (!json_is_string(json_timestamp) && json_string_value(json_timestamp) == 0) {
+       
+        return -2;
+    }
+      str_timestamp = strdup(json_string_value(json_timestamp));
+      
+      time_t now = time(NULL);
+      time_t timestamp = parse_time_string(str_timestamp);
+      
+      /*printf("stringtimestamp:%s\n", str_timestamp);
+      printf("TimeNow: %i\n", (int)now);
+      printf("jsoninteger:%lf\n", json_real_value(json_timestamp));
+      printf("timestamp:%i\n", (int)timestamp);
+      printf("%lf\n", time_diff);*/
+
+    /*struct tm struct_timestamp ={0};
+    strptime(str_timestamp, "%Y-%m-%dT%H:%M", &struct_timestamp);
+    time_t timestamp = mktime(&struct_timestamp);*/
+
+		double time_diff = difftime(now, timestamp);
 
     /* printf("Cache '%s' is '%.0lf' seconds old\n", _filepath, time_diff); */
 
-		if (time_diff < 900)
+		if (time_diff < (double)interval)
 		{
-      /* printf("Cache up to date\n"); */
+      /*printf("Cache up to date\n");*/
 
       return 0; 
     }
   }
+
 
   /* And get new cache if it isn't recent */
   /* printf("Getting new cache... \n"); */

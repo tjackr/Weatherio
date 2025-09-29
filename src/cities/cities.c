@@ -4,12 +4,13 @@
 #include <string.h>
 #include "../utils/files.h"
 #include "../utils/misc.h"
+#include "../includes/md5.h"
 
 /*============= Internal functions =============*/
 
 void cities_parse_list(Cities* _cities, const char* _list);
 
-void save_city_weather_data(const char* city_name, float lat, float lon, json_t* weather_json);
+void save_city_file(const char* city_name, float lat, float lon);
 
 /*==============================================*/
 
@@ -134,6 +135,8 @@ int city_add(Cities* _cities, char* _name, float _lat, float _lon, City** _city)
     new_city->lat = _lat;
     new_city->lon = _lon;
     
+save_city_file(new_city->name, new_city->lat, new_city->lon);
+
     new_city->prev = NULL;
     new_city->next = NULL;
 
@@ -263,19 +266,21 @@ int city_get_temperature(City* _city)
 
         save_city_weather_data(_city->name, _city->lat, _city->lon, weather_json); 
         json_decref(weather_json);*/
-		save_city_weather_data(_city->name, _city->lat, _city->lon, full_weather_json);
     	json_decref(full_weather_json);
     }
     
     return result;
 }
 
-void save_city_weather_data(const char* city_name, float lat, float lon, json_t* weather_json)
+void save_city_file(const char* city_name, float lat, float lon)
 {
-    create_directory_if_not_exists("./data/weather");
+    create_directory_if_not_exists("./data/cities");
     
     char filepath[256];
-    snprintf(filepath, sizeof(filepath), "./data/weather/%s.json", city_name);
+
+    const char* hashed_city_name = MD5_HashToString(city_name, strlen(city_name));
+
+    snprintf(filepath, sizeof(filepath), "./data/cities/%s.json", hashed_city_name);
     
     
     /* Create new JSON with city info */
@@ -284,13 +289,6 @@ void save_city_weather_data(const char* city_name, float lat, float lon, json_t*
     json_object_set_new(city_data, "latitude", json_real(lat));
     json_object_set_new(city_data, "longitude", json_real(lon));
     
-    /* Copy current section from cache */
-    json_t* current = json_object_get(weather_json, "current");
-          json_object_set_new(city_data, "current", json_deep_copy(current));
-       
-    /* Copy current_units section from cache */
-    json_t* current_units = json_object_get(weather_json, "current_units");
-        json_object_set_new(city_data, "current_units", json_deep_copy(current_units));
 
     
     json_save_to_file(city_data, filepath);

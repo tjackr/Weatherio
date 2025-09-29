@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <locale.h>
 
+
 #include "cities/cities.h"
 #include "input/cli.h"
 
@@ -14,7 +15,6 @@ int main(void)
   int result;
 
   setlocale(LC_ALL, "en_US.UTF-8");  /* atof() separates decimals based on locale, and the cities string uses dots to separate decimals which is standard for US loacle. So choosing between replacing every dot in the string with commas and simply choosing en_US locale I chose the latter */
-
   Cities cities;
   
   /* Initialize cities backend */
