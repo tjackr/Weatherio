@@ -24,26 +24,6 @@ int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t**
 
 int meteo_build_url(char* _url, float _lat, float _lon, bool _current)
 {
-  /* ---Unfinished
-   * We could build the meteo url dynamically with a set of parameters to get specific data
-   * User should set options in a seperate function beforehand, either into the meteo struct directly or into an options struct 
-   *
-   * Altough it's better to get as much data as possible at once from the API
-   * Unless we want to get forecast then we should switch atleast one param
-   *
-   Example parameters:
-   hourly=
-   daily=
-   current=
-   current_weather=(true || fase)
-   temperature_unit=(fahrenheit || celsius)
-
-   Resource: https://open-meteo.com/en/docs#api_documentation
-   * */
-
-  /* sprintf(url, "%s?latitude=%.4f&longitude=%.4f&current_weather=true", _meteo->api_url, _lat, _lon); */
-  /* sprintf(url, "%s?latitude=%f&longitude=%f&hourly=temperature_2m", _meteo->api_url, _lat, _lon); */
-	/* sprintf(url, sizeof(url), "%s/v1/forecast?latitude=%2.2f&longitude=%2.2f&hourly=temperature_2m", _meteo->api_url, _lat, _lon); */
 
   char* params;
 
