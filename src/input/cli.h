@@ -3,6 +3,8 @@
 
 #include "../cities/cities.h"
 
+
 int cli_init(Cities* _Cities);
+
 
 #endif

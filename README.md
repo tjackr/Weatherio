@@ -28,11 +28,17 @@ Run the CLI app:
 
 1. Push only to main branch after tested fully in development branch
 
-2. ...
+2. Code formatting:
+    - Tabs = 2 spaces
+    - Snake case only
+    - Passed arguments bagin with underscore
+    - Our Structs Are Capitally Named
+
+3. ...
 
 ## Dev Notes
 
 _This baby can't run yet_ 
 
-_... But it does crawl 👶_
+_... But it does crawl_ 👶
 

@@ -9,35 +9,7 @@ int yes_or_no(char* _question);
 
 /*==============================================*/
 
-/* Prints question, takes y/Y/n/N as input, returns 0 for no and 1 for yes */
-int yes_or_no(char* _question)
-{
-  char input[3];
-  while (1)
-  {
-    printf("%s\n(Y/N): ", _question);
-    fgets(input, sizeof(input), stdin);
-
-    if (input[1] == '\n')
-    {
-      if (input[0] == 'y' || input[0] == 'Y')
-        return 1;
-      else if (input[0] == 'n' || input[0] == 'N')
-        return 0;
-    }
-    else
-    {
-      printf("Ogiltigt svar!\n");
-    }
-    clear_input();
-  }
-}
-
 /* Main CLI loop */
-/* Feel free to add fancier menus and more choices
- * Maybe more like a main menu with options
- * Option to add/remove new city for instance
- * */
 int cli_init(Cities* _Cities) {
 
   int result;
@@ -118,4 +90,28 @@ int cli_init(Cities* _Cities) {
   printf("Ok, hejdå!\n");
 
   return 0;
+}
+
+/* Prints question, takes y/Y/n/N as input, returns 0 for no and 1 for yes */
+int yes_or_no(char* _question)
+{
+  char input[3];
+  while (1)
+  {
+    printf("%s\n(Y/N): ", _question);
+    fgets(input, sizeof(input), stdin);
+
+    if (input[1] == '\n')
+    {
+      if (input[0] == 'y' || input[0] == 'Y')
+        return 1;
+      else if (input[0] == 'n' || input[0] == 'N')
+        return 0;
+    }
+    else
+    {
+      printf("Ogiltigt svar!\n");
+    }
+    clear_input();
+  }
 }

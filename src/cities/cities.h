@@ -3,6 +3,7 @@
 
 #include "../meteo/meteo.h"
 
+
 typedef struct City City;
 
 typedef struct City
@@ -33,6 +34,7 @@ int cities_print(Cities* _Cities);
 
 void cities_dispose(Cities* _Cities);
 
+
 int city_add(Cities* _Cities, char* _name, float _latitude, float _longitude, City** _City_Ptr);
 
 int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _City_Ptr);
@@ -42,5 +44,6 @@ int city_get_by_name(Cities* _Cities, const char* _Name, City** _City_Ptr);
 int city_get_temperature(City* _City);
 
 void city_remove(Cities* _Cities, City* _City);
+
 
 #endif 
