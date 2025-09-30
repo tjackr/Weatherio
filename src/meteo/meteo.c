@@ -78,13 +78,13 @@ time_t parse_time_string(const char *time_str) {
 
     return mktime(&tm);
 }
-/* See if we have weather cache, call API if not */
+/* Check if we have the data in our cache folder, call API if not */
 int meteo_update_cache(const char* _filepath, const char* _url)
 {
 
   /* Check if cache exists and is recent enough */
-  /* This should check timestamp based on json instead
-   * http could check stat instead (if we want it to be responsible for files directly) */
+  /* Checks time and interval in JSON */
+  /* http could check stat instead (if we want it to be responsible for files directly) */
 	struct stat file_info;
 	if (stat(_filepath, &file_info) == 0)
 	{
