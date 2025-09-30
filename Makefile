@@ -10,9 +10,15 @@ SRC_DIR := src
 # Detta är en enkel variabel definition
 BUILD_DIR := build
 
+# Adding cache dir for deletion when running clean
+CACHE_DIR := data/cache
+
 # Flaggor: standard, varningar, optimering + auto-dep för headers
 # Detta är en enkel variabel definition
-CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -Iincludes -g # -g adds source code to binary so that we can debug using gdb
+CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -Iconfigs -g # -g adds source code to binary so that we can debug using gdb
+
+# Pipe dream
+# CFLAGS := -std=c89 -ansi -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -Iconfigs -g # -g adds source code to binary so that we can debug using gdb
 
 # Länkarflaggor
 # Detta är en enkel variabel definition
@@ -80,7 +86,7 @@ run: $(BIN)
 
 # Hjälpmål: städa bort genererade filer
 clean:
-	@rm -rf $(BUILD_DIR) $(BIN)
+	@rm -rf $(BUILD_DIR) $(CACHE_DIR) $(BIN)
 
 # Hjälpmål: skriv ut variabler för felsökning
 # Kör make print för att se variablerna efter expansion
