@@ -11,12 +11,10 @@
 
 ## Installation
 
-1. Install platform-specific dependencies
-
-2. Clone the repo and enter cloned dir:
+1. Clone the repo and enter cloned dir:
 `git clone https://github.com/tjackr/Weatherio.git && cd Weatherio`
 
-3. Just let make do its magic:
+2. Just let make do its magic:
 `make all`
 
 ## Usage
@@ -31,7 +29,7 @@ Run the CLI app:
 2. Code formatting:
     - Tabs = 2 spaces
     - Snake case only
-    - Passed arguments bagin with underscore
+    - Passed arguments begin with underscore
     - Our Structs Are Capitally Named
 
 3. ...
