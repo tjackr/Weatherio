@@ -97,14 +97,14 @@ int meteo_update_cache(const char* _filepath, const char* _url)
     if (timestamp == -1)
       return -3;
 
+		double time_diff = difftime(now, timestamp);
+
     /* 
     printf("stringtimestamp:%s\n", str_timestamp);
     printf("TimeNow: %i\n", (int)now);
     printf("timestamp:%i\n", (int)timestamp);
-    */
-
-		double time_diff = difftime(now, timestamp);
     printf("%lf\n", time_diff);
+    */
 
     /* printf("Cache '%s' is '%.0lf' seconds old\n", _filepath, time_diff); */
 
