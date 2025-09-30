@@ -5,11 +5,11 @@
 
 #include "http.h"
 
-/* -------------Internal function definitions---------------- */
+/*============= Internal functions =============*/
 
 size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _Data);
 
-/* ---------------------------------------------------------- */
+/*==============================================*/
 
 /*
  * Resources:

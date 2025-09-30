@@ -10,7 +10,7 @@
 
 void cities_parse_list(Cities* _Cities, const char* _list);
 
-void save_city_file(const char* city_name, float lat, float lon);
+int city_save_to_file(const char* city_name, float lat, float lon);
 
 /*==============================================*/
 
@@ -26,14 +26,14 @@ int cities_init(Cities* _Cities)
   memset(_Cities, 0, sizeof(Cities));
 
   /* Load cities from template file */
-  FileString cities_list_string = create_file_string("data/city_coords.txt");
-  if (cities_list_string.data == NULL) { 
+  FileString Cities_List_String = create_file_string("data/city_coords.txt");
+  if (Cities_List_String.data == NULL) { 
     printf("Loading cities from file failed, exiting.\n"); 
     exit(0); 
   }
 
-  cities_parse_list(_Cities, cities_list_string.data);
-  destroy_file_string(&cities_list_string);
+  cities_parse_list(_Cities, Cities_List_String.data);
+  destroy_file_string(&Cities_List_String);
 
   return 0;
 }
@@ -60,6 +60,8 @@ int cities_print(Cities* _Cities)
   return i;
 }
 
+/* Populates our Cities struct, calling city_add based on template string
+ * Format: Name:Lat:Lon\n */
 void cities_parse_list(Cities* _Cities, const char* _cities_string)
 {
 	char* list_copy = strdup(_cities_string);
@@ -115,6 +117,7 @@ void cities_parse_list(Cities* _Cities, const char* _cities_string)
 	} while (*ptr != '\0'); /* Unless next pointer is a null terminator we keep going */
 	free(list_copy);
 }
+
 /* Add new City struct to Cities struct */
 int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_Ptr)
 {
@@ -130,7 +133,11 @@ int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_
   New_City->lat = _lat;
   New_City->lon = _lon;
   
-  save_city_file(New_City->name, New_City->lat, New_City->lon);
+  if (city_save_to_file(New_City->name, New_City->lat, New_City->lon) != 0)
+  {
+    printf("Failed to save %s to json", _name);
+    return -2;
+  }
 
   New_City->prev = NULL;
   New_City->next = NULL;
@@ -139,7 +146,7 @@ int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_
   New_City->weather = NULL;
   New_City->forecast = NULL;
 
-  if (_Cities->tail == NULL)
+  if (_Cities->tail == NULL) /* If no city added yet */
   {
     _Cities->head = New_City;
     _Cities->tail = New_City;
@@ -160,23 +167,23 @@ int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_
 /* Get city by corresponding name */
 int city_get_by_name(Cities* _Cities, const char* _name, City** _City_Ptr)
 {
-	City* current = _Cities->head;
-	if (current == NULL)
+	City* Current = _Cities->head;
+	if (Current == NULL)
 		return -1;
 
 	do
 	{
-		if (strcmp(current->name, _name) == 0)
+		if (strcmp(Current->name, _name) == 0)
 		{
 			if (_City_Ptr != NULL)
-				*_City_Ptr = current;
+				*_City_Ptr = Current;
 				
 			return 0;
 		}
 
-		current = current->next;
+		Current = Current->next;
 
-	} while (current != NULL);
+	} while (Current != NULL);
 	
 	return -2;
 }
@@ -184,8 +191,8 @@ int city_get_by_name(Cities* _Cities, const char* _name, City** _City_Ptr)
 /* Get city by its index in the cities linked list */
 int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _City_Ptr)
 {
-  City* current = _Cities->head;
-  if (current == NULL)
+  City* Current = _Cities->head;
+  if (Current == NULL)
     return -1;
 
   int i;
@@ -193,10 +200,10 @@ int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _
   {
     if (i == *_index-1)
     {
-      *_City_Ptr = current;
+      *_City_Ptr = Current;
       return 0;
     }
-    current = current->next;
+    Current = Current->next;
   }
 
   return -2;
@@ -231,6 +238,31 @@ void city_remove(Cities* _Cities, City* _City)
 	free(_City);
 }
 
+/* Creates json file containing city name and coordinates */
+int city_save_to_file(const char* _city_name, float _lat, float _lon)
+{
+  create_directory_if_not_exists("./data/cities");
+
+  char filepath[256];
+
+  const char* hashed_city_name = MD5_HashToString(_city_name, strlen(_city_name));
+
+  snprintf(filepath, sizeof(filepath), "./data/cities/%s.json", hashed_city_name);
+
+  /* Create new JSON with city info */
+  json_t* city_data = json_object();
+  json_object_set_new(city_data, "city_name", json_string(_city_name));
+  json_object_set_new(city_data, "latitude", json_real(_lat));
+  json_object_set_new(city_data, "longitude", json_real(_lon));
+
+  /* Save json to file and cleanup jansson object */
+  json_save_to_file(city_data, filepath);
+  json_decref(city_data);
+
+  return 0;
+}
+
+/* Call meteo functions for given City's weather data */
 int city_get_temperature(City* _City)
 {
   /* Allocate weather struct if not already allocated */
@@ -252,27 +284,6 @@ int city_get_temperature(City* _City)
   }
   
   return result;
-}
-
-void save_city_file(const char* _city_name, float _lat, float _lon)
-{
-  create_directory_if_not_exists("./data/cities");
-  
-  char filepath[256];
-
-  const char* hashed_city_name = MD5_HashToString(_city_name, strlen(_city_name));
-
-  snprintf(filepath, sizeof(filepath), "./data/cities/%s.json", hashed_city_name);
-  
-  /* Create new JSON with city info */
-  json_t* city_data = json_object();
-  json_object_set_new(city_data, "city_name", json_string(_city_name));
-  json_object_set_new(city_data, "latitude", json_real(_lat));
-  json_object_set_new(city_data, "longitude", json_real(_lon));
-  
-  /* Save json to file and cleanup jansson object */
-  json_save_to_file(city_data, filepath);
-  json_decref(city_data);
 }
 
 /* Dispose of cities struct */

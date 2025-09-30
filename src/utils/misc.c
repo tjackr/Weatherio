@@ -28,26 +28,26 @@ void format_name(char* _input)
 }
 
 /* Counts lines in a const char* string */
-int line_count(const char* string)
+int line_count(const char* _string)
 {
   int i;
   int lc = 0; 
-  int len = strlen(string);
+  int len = strlen(_string);
   for (i = 0; i < len; i++)
   {
-    if (string[i] == '\n')
+    if (_string[i] == '\n')
       lc++;
   }
   return lc;
 }
 
 /* C89 approved strdup */
-char *strdup(const char *str) {
-  size_t size = strlen(str) + 1;
+char *strdup(const char *_str) {
+  size_t size = strlen(_str) + 1;
   char *copy = (char*)malloc(size);
 
   if (copy != NULL) 
-    memcpy(copy, str, size);
+    memcpy(copy, _str, size);
 
   return copy;
 }

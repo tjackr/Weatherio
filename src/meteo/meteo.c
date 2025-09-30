@@ -19,7 +19,7 @@ int meteo_define_filepath(char** _filepath, const char* _url);
 
 int meteo_update_cache(const char* _filepath, const char* _url);
 
-int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t** _full_json);
+int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t** _full_json);
 
 time_t parse_time_string(const char* _time_str);
 
@@ -36,10 +36,10 @@ int meteo_build_url(char* _url, float _lat, float _lon, bool _current)
 
   /* Might wanna handle this more safely C89 style */
   sprintf(_url, 
-      METEO_BASE_URL, 
-      _lat, 
-      _lon,
-      params);
+    METEO_BASE_URL, 
+    _lat, 
+    _lon,
+    params);
 
   return 0;
 }
@@ -159,7 +159,8 @@ int meteo_update_cache(const char* _filepath, const char* _url)
 int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t** _full_json)
 {
   json_t* json = json_load_from_file(_filepath);
-  if (json == NULL) {
+  if (json == NULL) 
+  {
     printf("Failed to load JSON from file: %s\n", _filepath);
     return -1;
   }
@@ -168,7 +169,8 @@ int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t**
   json_t* current_weather = json_object_get(json, "current");
   json_t* current_weather_units = json_object_get(json, "current_units");
 
-  if (!current_weather || !current_weather_units) {
+  if (!current_weather || !current_weather_units) 
+  {
     printf("Failed to get weather data objects from JSON\n");
     json_decref(json);
     return -2;
@@ -189,10 +191,11 @@ int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t**
 
   /* Validate all required fields are present */
   if (!json_is_number(temperature) || !json_is_string(temperature_unit) ||
-      !json_is_number(windspeed) || !json_is_string(windspeed_unit) ||
-      !json_is_number(winddirection) || !json_is_string(winddirection_unit) ||
-      !json_is_number(precipitation) || !json_is_string(precipitation_unit) ||
-      !json_is_integer(weather_code)) {
+    !json_is_number(windspeed) || !json_is_string(windspeed_unit) ||
+    !json_is_number(winddirection) || !json_is_string(winddirection_unit) ||
+    !json_is_number(precipitation) || !json_is_string(precipitation_unit) ||
+    !json_is_integer(weather_code)) 
+  {
     printf("Missing or invalid weather data fields in JSON\n");
     json_decref(json);
     return -3;
@@ -213,7 +216,8 @@ int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t**
 
   _Weather->weather_code = json_integer_value(weather_code);
   
-  if (_full_json != NULL) {
+  if (_full_json != NULL) 
+  {
     *_full_json = json;
     json_incref(json); /* Increase reference count so it doesn't get freed */
   }

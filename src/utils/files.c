@@ -3,47 +3,56 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-#include <ctype.h>
 #include <errno.h>
 
 #include "files.h"
 
-bool file_exists(const char *path) {
-    struct stat buffer;
-    if (stat(path, &buffer) == 0) {
-        return S_ISREG(buffer.st_mode);
-    }
-    return false;
+/* Returns true or false whether file exists */
+bool file_exists(const char* _path) {
+  struct stat buffer;
+  if (stat(_path, &buffer) == 0) {
+    return S_ISREG(buffer.st_mode);
+  }
+  return false;
 }
 
-/* Read file contents into a char array using fopen, fseek, fread and manual memory allocation 
- * Resources: 
- * https://cplusplus.com/reference/cstdio/fread
- * 
- * WE SHOULD NOT USE THIS, IMPOSSIBLE TO FREE MEMORY
- * */
-const char* load_file_as_string(const char* _filename) {
-    
-  FILE* file = fopen(_filename, "r");
-  if (!file) { printf("File load error: %s\n", _filename); exit (0); }
-  
-  fseek(file, 0, SEEK_END); /* Seek end of file */
-  int file_size = ftell(file); /* Define filesize based on fseek position */
-  rewind(file); /* rewind to beginning of file */
+/* Returns true or false whether directory exists */
+bool directory_exists(const char* _path) {
+  struct stat buffer;
+  if (stat(_path, &buffer) == 0) {
+    return S_ISDIR(buffer.st_mode);
+  }
+  return false;
+}
 
-  char* buffer = (char*)malloc(sizeof(char) * file_size);
-  if (buffer == NULL) { printf("Malloc error"); exit (1); }
-  
-  int result = fread(buffer, 1, file_size, file); /* reads file into buffer and returns the amount of bytes read */
-  if (result != file_size) { printf("File read error"); exit (2); }
-
-  fclose(file);
-  return buffer;
+/* Tries to create directory if it doesn't already exist */
+int create_directory_if_not_exists(const char* _path) {
+  if (directory_exists(_path)) {
+    return 0;
+  }
+  #if defined _WIN32
+  bool success = CreateDirectory(_Path, NULL);
+  if(success == false)
+  {
+    DWORD err = GetLastError();
+    if(err == ERROR_ALREADY_EXISTS)
+      return 1;
+    else
+      return -1;
+  }
+	#else
+  if (mkdir(_path, 0755) == -1) {
+    if (errno != EEXIST) {
+      printf("Failed to create directory '%s': %s\n", _path, strerror(errno));
+      return -1;
+    }
+  }
+  #endif
+  return 0;
 }
 
 /* Loads content of file into custom String struct (on heap)
- * IMPORTANT: Needs to manually be freed using next function
- * */
+ * IMPORTANT: Needs to manually be freed using destroy_file_string */
 FileString create_file_string(const char* _filename) {
 
   FILE* file = fopen(_filename, "r");
@@ -53,37 +62,37 @@ FileString create_file_string(const char* _filename) {
   int file_size = ftell(file); /* Define filesize based on fseek position */
   rewind(file); /* Rewind to beginning of file */
 
-  FileString fstr = {
+  /* Init struct */
+  FileString Fstr = {
     (char*)malloc(sizeof(char) * (file_size + 1)), /* Plus one for \0 */
     file_size
-  }; /* Init struct */
-
-  if (fstr.data == NULL) { printf("Malloc error"); exit (1); }
+  }; 
+  if (Fstr.data == NULL) { printf("Malloc error"); exit (1); }
 
   /* Reads file into buffer and returns the amount of bytes read */
-  int read_size = fread(fstr.data, 1, file_size, file); if (read_size != file_size) { printf("File read error"); exit (2); }
+  int read_size = fread(Fstr.data, 1, file_size, file); 
+  if (read_size != file_size) { printf("File read error"); exit (2); }
 
-  fstr.data[file_size] = '\0';
+  Fstr.data[file_size] = '\0';
 
   fclose(file); /* Done with file, close it */
 
-  return fstr;
+  return Fstr;
 }
 
 /* Helper function for clearing memory from custom String */
-void destroy_file_string(FileString* fstr)
+void destroy_file_string(FileString* _Fstr)
 {
-  if (fstr->size > 0)
+  if (_Fstr->size > 0)
   {
-    free(fstr->data);
-    fstr->data = NULL;
-    fstr->size = 0;
+    free(_Fstr->data);
+    _Fstr->data = NULL;
+    _Fstr->size = 0;
   } 
   else { printf("String is empty!"); }
 }
 
-
-/* Writes string to file */
+/* Writes string to given file */
 int write_string_to_file(const char* _str, const char* _filename)
 {
    FILE *f = fopen(_filename, "w");
@@ -98,46 +107,25 @@ int write_string_to_file(const char* _str, const char* _filename)
    return 0;
 }
 
-/*json parser*/
-int json_parse(json_t **json_object, const char* raw_text, int text_len)
+/* Parses jansson object from given string */
+int json_parse(json_t** _json_obj_ptr, const char* _raw_text, int _text_len)
 {
-  if (raw_text == NULL) {
+  if (_raw_text == NULL) {
     printf("No text to parse as JSON!\n");
     return -1;
   }
 
   json_error_t error;
-  *json_object = json_loadb(raw_text, text_len, 0, &error);
+  *_json_obj_ptr = json_loadb(_raw_text, _text_len, 0, &error);
 
-  if (*json_object == NULL) {
+  if (*_json_obj_ptr == NULL) {
     printf("Error parsing JSON at line %d: %s\n", error.line, error.text);
     return -2;
   }
   return 0;  
 }
-bool directory_exists(const char *path) {
-  struct stat buffer;
-  if (stat(path, &buffer) == 0) {
-    return S_ISDIR(buffer.st_mode);
-  }
-  return false;
-}
 
-int create_directory_if_not_exists(const char* _path) {
-  if (directory_exists(_path)) {
-    return 0;
-  }
-  
-  if (mkdir(_path, 0755) == -1) {
-    if (errno != EEXIST) {
-      printf("Failed to create directory '%s': %s\n", _path, strerror(errno));
-      return -1;
-    }
-  }
-  
-  return 0;
-}
-
+/* Loads jansson object from given file */
 json_t* json_load_from_file(const char* _filename)
 {
   json_error_t error;
@@ -152,6 +140,7 @@ json_t* json_load_from_file(const char* _filename)
   return json;
 }
 
+/* Writes jansson object to given file */
 int json_save_to_file(json_t* _json, const char* _filename)
 {
   if (_json == NULL) {
