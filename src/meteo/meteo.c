@@ -64,12 +64,13 @@ int meteo_define_filepath(char** _filepath, const char* _url)
   return 0;
 }
 
-/* See if we have weather cache, call API if not */
+/* Check if we have the data in our cache folder, call API if not */
 int meteo_update_cache(const char* _filepath, const char* _url)
 {
-  /* Check if cache exists */
+  /* Check if cache exists
+   * Then check update interval and timestamp from json to see if it should be updated */
 	struct stat file_info;
-	if (stat(_filepath, &file_info) == 0)
+	if (stat(_filepath, &file_info) == 0) 
 	{
     int interval;
     char* str_timestamp;
