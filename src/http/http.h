@@ -12,10 +12,10 @@ typedef struct {
   size_t size; /* Size of chunk */
 } HTTP;
 
-int http_init(HTTP* _data);
+int http_init(HTTP* _Data);
 
-int curl_get_response(HTTP* _data, const char* _url);
+int curl_get_response(HTTP* _Data, const char* _url);
 
-void http_dispose(HTTP* _data);
+void http_dispose(HTTP* _Data);
 
 #endif

@@ -9,6 +9,7 @@
 #include "../includes/md5.h"
 #include "../utils/files.h"
 #include "../utils/misc.h"
+#include "../utils/timeparse.h"
 
 /*============= Internal functions =============*/
 
@@ -20,17 +21,18 @@ int meteo_update_cache(const char* _filepath, const char* _url);
 
 int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t** _full_json);
 
+time_t parse_time_string(const char* _time_str);
+
 /*==============================================*/
 
 int meteo_build_url(char* _url, float _lat, float _lon, bool _current)
 {
-
   char* params;
 
   if (_current)
-    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Europe%2FBerlin";
+    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto";
   else
-    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Europe%2FBerlin";
+    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto";
 
   /* Might wanna handle this more safely C89 style */
   sprintf(_url, 
@@ -61,68 +63,47 @@ int meteo_define_filepath(char** _filepath, const char* _url)
 
   return 0;
 }
-time_t parse_time_string(const char *time_str) {
-    struct tm tm = {0};
-    int year, month, day, hour, min;
 
-    if (sscanf(time_str, "%4d-%2d-%2dT%2d:%2d", &year, &month, &day, &hour, &min) != 5) {
-        return (time_t)-1;  // parsing error
-    }
-
-    tm.tm_year = year - 1900;  // struct tm years since 1900
-    tm.tm_mon = month - 1;     // struct tm months are zero-based
-    tm.tm_mday = day;
-    tm.tm_hour = hour;
-    tm.tm_min = min;
-    tm.tm_isdst = -1; // Not considering daylight saving time
-
-    return mktime(&tm);
-}
-/* Check if we have the data in our cache folder, call API if not */
+/* See if we have weather cache, call API if not */
 int meteo_update_cache(const char* _filepath, const char* _url)
 {
-
-  /* Check if cache exists and is recent enough */
-  /* Checks time and interval in JSON */
-  /* http could check stat instead (if we want it to be responsible for files directly) */
+  /* Check if cache exists */
 	struct stat file_info;
 	if (stat(_filepath, &file_info) == 0)
 	{
-
     int interval;
     char* str_timestamp;
+    time_t now = time(NULL);
 
+    /* Parse update interval and timestamp from cache */
     json_t* json_current = json_object_get(json_load_from_file(_filepath), "current");
     json_t* json_interval = json_object_get(json_current, "interval");
     json_t* json_timestamp = json_object_get(json_current, "time");
 
-    if (!json_is_integer(json_interval) && json_integer_value(json_interval) == 0) {
-        
-        return -1;
-    }
-
+    if (!json_is_integer(json_interval) && json_integer_value(json_interval) == 0) 
+      return -1;
     interval = json_integer_value(json_interval);
 
-    if (!json_is_string(json_timestamp) && json_string_value(json_timestamp) == 0) {
-       
-        return -2;
-    }
-      str_timestamp = strdup(json_string_value(json_timestamp));
-      
-      time_t now = time(NULL);
-      time_t timestamp = parse_time_string(str_timestamp);
-      
-      /*printf("stringtimestamp:%s\n", str_timestamp);
-      printf("TimeNow: %i\n", (int)now);
-      printf("jsoninteger:%lf\n", json_real_value(json_timestamp));
-      printf("timestamp:%i\n", (int)timestamp);
-      printf("%lf\n", time_diff);*/
+    if (!json_is_string(json_timestamp) && json_string_value(json_timestamp) == 0) 
+      return -2;
+    str_timestamp = strdup(json_string_value(json_timestamp));
 
-    /*struct tm struct_timestamp ={0};
-    strptime(str_timestamp, "%Y-%m-%dT%H:%M", &struct_timestamp);
-    time_t timestamp = mktime(&struct_timestamp);*/
+    /* Eventually we should solve how to force UTC time instead of local time
+     * But for now we'll just have to set timezone=auto to open-meteo
+     * This lets them decide based on where user is sending request 
+     * So uhh, turn off your VPNs boys */
+    time_t timestamp = parse_time_string(str_timestamp);
+    if (timestamp == -1)
+      return -3;
+
+    /* 
+    printf("stringtimestamp:%s\n", str_timestamp);
+    printf("TimeNow: %i\n", (int)now);
+    printf("timestamp:%i\n", (int)timestamp);
+    */
 
 		double time_diff = difftime(now, timestamp);
+    printf("%lf\n", time_diff);
 
     /* printf("Cache '%s' is '%.0lf' seconds old\n", _filepath, time_diff); */
 
@@ -134,42 +115,38 @@ int meteo_update_cache(const char* _filepath, const char* _url)
     }
   }
 
-
-  /* And get new cache if it isn't recent */
+  /* Get new cache if it isn't recent */
   /* printf("Getting new cache... \n"); */
 
-	HTTP http;
-	if (http_init(&http) != 0)
+	HTTP Http;
+	if (http_init(&Http) != 0)
 	{
 		printf("Failed to initialize HTTP\n");
 		return -1;
 	}
 
-	int result = curl_get_response(&http, _url);
+	int result = curl_get_response(&Http, _url);
 	if (result != 0)
 	{
 		printf("HTTP GET request failed. Errorcode: %i\n", result);
-		http_dispose(&http);
+		http_dispose(&Http);
 		return -2;
 	}
 
-   /* Validate JSON before saving */
-    json_error_t error;
-    json_t* json = json_loadb(http.addr, http.size, 0, &error);
-    if (json == NULL) {
-        printf("Invalid JSON received from API: %s\n", error.text);
-        http_dispose(&http);
-        return -3;
-    }
+  /* Validate JSON before saving */
+  json_error_t error;
+  json_t* json = json_loadb(Http.addr, Http.size, 0, &error);
+  if (json == NULL) {
+    printf("Invalid JSON received from API: %s\n", error.text);
+    http_dispose(&Http);
+    return -3;
+  }
 
-  /*  
-   * THIS SHOULD PROBABLY BE PARSED FIRST
-   * */
-
-	result = write_string_to_file(http.addr, _filepath);
+	result = write_string_to_file(Http.addr, _filepath);
 	if (result != 0)
 	{
 		printf("Failed to write JSON to file: %i\n", result);
+		http_dispose(&Http);
 		return -4;
 	}
 
@@ -178,7 +155,7 @@ int meteo_update_cache(const char* _filepath, const char* _url)
 }
 
 /* Set current weather values to City's Meteo's Weather struct*/
-int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t** _full_json)
+int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t** _full_json)
 {
   json_t* json = json_load_from_file(_filepath);
   if (json == NULL) {
@@ -221,25 +198,24 @@ int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t**
   }
 
   /* Set weather struct values */
-  _weather->temperature = json_number_value(temperature);
-  _weather->temperature_unit = strdup(json_string_value(temperature_unit));
+  _Weather->temperature = json_number_value(temperature);
+  _Weather->temperature_unit = strdup(json_string_value(temperature_unit));
 
-  _weather->windspeed = json_number_value(windspeed);
-  _weather->windspeed_unit = strdup(json_string_value(windspeed_unit));
+  _Weather->windspeed = json_number_value(windspeed);
+  _Weather->windspeed_unit = strdup(json_string_value(windspeed_unit));
 
-  _weather->winddirection = json_number_value(winddirection);
-  _weather->winddirection_unit = strdup(json_string_value(winddirection_unit));
+  _Weather->winddirection = json_number_value(winddirection);
+  _Weather->winddirection_unit = strdup(json_string_value(winddirection_unit));
 
-  _weather->precipitation = json_number_value(precipitation);
-  _weather->precipitation_unit = strdup(json_string_value(precipitation_unit));
+  _Weather->precipitation = json_number_value(precipitation);
+  _Weather->precipitation_unit = strdup(json_string_value(precipitation_unit));
 
-  _weather->weather_code = json_integer_value(weather_code);
+  _Weather->weather_code = json_integer_value(weather_code);
   
   if (_full_json != NULL) {
-        *_full_json = json;
-        json_incref(json); /* Increase reference count so it doesn't get freed */
-    }
-
+    *_full_json = json;
+    json_incref(json); /* Increase reference count so it doesn't get freed */
+  }
 
   /* Clean up */
   json_decref(json);
@@ -247,7 +223,8 @@ int meteo_set_current_weather(const char* _filepath, Weather* _weather, json_t**
   return 0; 
 }
 
-int meteo_get_current_weather(float _lat, float _lon, Weather* _weather, json_t** _full_json)
+/* Main public function for calling necessary functions needed to get individal City weather */
+int meteo_get_current_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_json)
 {
   int result = 0;
 
@@ -269,7 +246,7 @@ int meteo_get_current_weather(float _lat, float _lon, Weather* _weather, json_t*
   if (result != 0)
     return result;
 
-  result = meteo_set_current_weather(filepath, _weather, _full_json);
+  result = meteo_set_current_weather(filepath, _Weather, _full_json);
   if (result != 0)
     return result;
 

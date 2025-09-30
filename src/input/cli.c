@@ -36,20 +36,20 @@ int yes_or_no(char* _question)
 /* Main CLI loop */
 /* Feel free to add fancier menus and more choices
  * Maybe more like a main menu with options
- * Option to add new city for instance
- * Also remove, so we can rid the world of malmö
+ * Option to add/remove new city for instance
  * */
-int cli_init(Cities* _cities) {
+int cli_init(Cities* _Cities) {
 
   int result;
-  printf(
+  printf("\n\n"
     "Varmt välkommen till \n"
     "--------------------\n"
     "▖  ▖    ▗ ▌     ▘  ▌\n"
     "▌▞▖▌█▌▀▌▜▘▛▌█▌▛▘▌▛▌▌\n"
     "▛ ▝▌▙▖█▌▐▖▌▌▙▖▌ ▌▙▌▖\n"
     "--------------------\n\n\n"
-    "Börja med att välja den stad du vill se väder från.\n\n"
+    "Börja med att välja den stad du vill se väder från."
+    "\n\n"
   );
 
   int go_again;
@@ -59,8 +59,8 @@ int cli_init(Cities* _cities) {
 
     printf("Tillgängliga städer:\n");
 
-    City* selected_city;
-    int cities_count = cities_print(_cities); /* Print cities and get count */
+    City* Selected_City;
+    int cities_count = cities_print(_Cities); /* Print cities and get count */
     int input_choice = 0;
 
     printf("\nVälj stad: ");
@@ -69,13 +69,13 @@ int cli_init(Cities* _cities) {
 
     if (input_choice <= cities_count && input_choice != 0)
     {
-      result = city_get_by_index(_cities, &cities_count, &input_choice, &selected_city);
+      result = city_get_by_index(_Cities, &cities_count, &input_choice, &Selected_City);
       if (result != 0) {
         printf("Något gick fel med att hämta tillgängliga städer! (Kod: %i)\n", result);
         return (-2);
       }
 
-      result = city_get_temperature(selected_city);
+      result = city_get_temperature(Selected_City);
       if (result != 0) {
         printf("Något gick fel med att hämta väderdata! (Kod: %i)\n", result);
       }
@@ -89,15 +89,15 @@ int cli_init(Cities* _cities) {
           "**  Vindriktning: %.0lf %s\n"
           "*** Nederbörd: %.2lf%s\n" 
           "***********************\n\n",
-          selected_city->name,
-          selected_city->weather->temperature,
-          selected_city->weather->temperature_unit,
-          selected_city->weather->windspeed,
-          selected_city->weather->windspeed_unit,
-          selected_city->weather->winddirection,
-          selected_city->weather->winddirection_unit,
-          selected_city->weather->precipitation,
-          selected_city->weather->precipitation_unit);
+          Selected_City->name,
+          Selected_City->weather->temperature,
+          Selected_City->weather->temperature_unit,
+          Selected_City->weather->windspeed,
+          Selected_City->weather->windspeed_unit,
+          Selected_City->weather->winddirection,
+          Selected_City->weather->winddirection_unit,
+          Selected_City->weather->precipitation,
+          Selected_City->weather->precipitation_unit);
       }
     }
     else {

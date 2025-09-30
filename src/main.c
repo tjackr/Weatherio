@@ -6,10 +6,6 @@
 #include "cities/cities.h"
 #include "input/cli.h"
 
-/* Beroenden ska bara gå åt ett håll: fil1 bereonde av fil2 men fil2 inte beroeden av fil1 etc
- *
- * */
-
 int main(void)
 {
   int result;

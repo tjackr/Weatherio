@@ -7,7 +7,7 @@
 
 /* -------------Internal function definitions---------------- */
 
-size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _data);
+size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _Data);
 
 /* ---------------------------------------------------------- */
 
@@ -20,17 +20,17 @@ size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _data);
 */
 
 /* Just init our data struct with zeroes */
-int http_init(HTTP* _data)
+int http_init(HTTP* _Data)
 {
-  memset(_data, 0, sizeof(HTTP));
+  memset(_Data, 0, sizeof(HTTP));
   return 0;
 }
 
 /* Mystery daniel@haxx.se callback function */
-size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _data) 
+size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _Data) 
 {
   size_t realsize = _size * _nmemb; 
-  HTTP* mem = (HTTP*)_data;
+  HTTP* mem = (HTTP*)_Data;
   
   char *ptr = realloc(mem->addr, mem->size + realsize + 1); /* We reallocate memory for our chunk and make a pointer to the new addr */
   if (!ptr)
@@ -47,21 +47,21 @@ size_t curl_callback(void* _contents, size_t _size, size_t _nmemb, HTTP* _data)
   return realsize; /* We return the size of the chunk... */
 }
 
-int curl_get_response(HTTP* _data, const char* _url)
+int curl_get_response(HTTP* _Data, const char* _url)
 {
   CURL *curl;
   CURLcode res;
   char error[CURL_ERROR_SIZE];
 
-  _data->addr = malloc(1); /* We allocate an address to our data struct */
-  _data->size = 0; /* We will reallocate memory to it in write_memory(), for now 0 data */
+  _Data->addr = malloc(1); /* We allocate an address to our data struct */
+  _Data->size = 0; /* We will reallocate memory to it in write_memory(), for now 0 data */
 
   curl_global_init(CURL_GLOBAL_DEFAULT); /* init curl with defaults (same as _ALL = WIN32 && SSL) */
   curl = curl_easy_init();
 
   curl_easy_setopt(curl, CURLOPT_URL, _url);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_callback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)_data);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)_Data);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, "TempleOSExplorer/1.0 (TempleBot/16.0; HolyCScript) DivineEngine/20231220");
   curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error);
 
@@ -92,7 +92,7 @@ int curl_get_response(HTTP* _data, const char* _url)
 }
 
 /* Caller needs to free the data from memory when they're done using it 🐦 */
-void http_dispose(HTTP* _data)
+void http_dispose(HTTP* _Data)
 {
-  free(_data);
+  free(_Data);
 }

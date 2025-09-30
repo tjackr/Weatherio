@@ -27,20 +27,20 @@ typedef struct
 } Cities;
 
 
-int cities_init(Cities* c);
+int cities_init(Cities* _Cities);
 
 int cities_print(Cities* _Cities);
 
-void cities_dispose(Cities* c);
+void cities_dispose(Cities* _Cities);
 
 
-int city_add(Cities* _Cities, char* _Name, float _Latitude, float _Longitude, City** _City);
+int city_add(Cities* _Cities, char* _name, float _latitude, float _longitude, City** _City_Ptr);
 
-int city_get_by_index(Cities* _cities, int* _cities_count, int* _index, City** _city);
+int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _City_Ptr);
 
-int city_get_by_name(Cities* _Cities, const char* _Name, City** _CityPtr);
+int city_get_by_name(Cities* _Cities, const char* _Name, City** _City_Ptr);
 
-int city_get_temperature(City* _City/* , float* _Temperature */);
+int city_get_temperature(City* _City);
 
 void city_remove(Cities* _Cities, City* _City);
 

@@ -62,6 +62,7 @@ external/*
 
 # No cache files
 data/cache/*
+data/cities/*
 
 # No _ files
 _*
