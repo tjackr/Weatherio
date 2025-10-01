@@ -6,6 +6,7 @@
 #include <errno.h>
 
 #include "files.h"
+#include "../includes/tinydir.h"
 
 /* Returns true or false whether file exists */
 bool file_exists(const char* _path) {

@@ -51,3 +51,15 @@ char *strdup(const char *_str) {
 
   return copy;
 }
+
+/* Concatenates two strings using malloc, strcpy and strcat
+ * (goes without saying but needs to be freed by caller) */
+char* stringcat(const char* a, const char* b)
+{
+  size_t len = strlen(b) + strlen(b);
+  char* ab = (char*)malloc(sizeof(char) * len);
+  strcpy(ab, a);
+  strcat(ab, b);
+
+  return ab;
+}

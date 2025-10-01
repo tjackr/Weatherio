@@ -5,21 +5,28 @@
 #include "../utils/files.h"
 #include "../utils/misc.h"
 #include "../includes/md5.h"
+#include "../includes/tinydir.h"
 
 /*============= Internal functions =============*/
 
-void cities_parse_list(Cities* _Cities, const char* _list);
+void cities_parse_list(const char* _list);
 
-int city_save_to_file(const char* city_name, float lat, float lon);
+void cities_parse_files(Cities* _Cities);
 
 /*==============================================*/
+
+const char* CITIES_PATH = "./data/cities/";
+const char* CACHE_PATH = "./data/cities/";
 
 int cities_init(Cities* _Cities)
 {
   /* Create basic directories */
-  if (create_directory_if_not_exists("./data") != 0 ||
-    create_directory_if_not_exists("./data/cache") != 0) {
-    printf("Failed to create data directories\n");
+  if (create_directory_if_not_exists("./data/") != 0 ||
+      create_directory_if_not_exists(CACHE_PATH) != 0 ||
+      create_directory_if_not_exists(CITIES_PATH) != 0) 
+  {
+    printf("Failed to create data directories, exiting.\n");
+    exit(0);
   }
 
   /* Null all values in Cities struct */
@@ -29,11 +36,16 @@ int cities_init(Cities* _Cities)
   FileString Cities_List_String = create_file_string("data/city_coords.txt");
   if (Cities_List_String.data == NULL) { 
     printf("Loading cities from file failed, exiting.\n"); 
-    exit(0); 
+    exit(1); 
   }
 
-  cities_parse_list(_Cities, Cities_List_String.data);
+  /* Parse cities from template file and free string memory */
+  cities_parse_list(Cities_List_String.data);
   destroy_file_string(&Cities_List_String);
+
+  /* Parse cities from json files
+   * This also adds each existing City to Cities */
+  cities_parse_files(_Cities); 
 
   return 0;
 }
@@ -51,7 +63,7 @@ int cities_print(Cities* _Cities)
   int i = 0;
 	do
 	{
-		printf("  (%i) - %s, Latitude: %.4f, Longitude: %.4f\n", i+1, current->name, current->lat, current->lon);
+		printf("  %i. %s (%.4f, %.4f)\n", i+1, current->name, current->lat, current->lon);
 		current = current->next;
     i++;
 
@@ -62,7 +74,7 @@ int cities_print(Cities* _Cities)
 
 /* Populates our Cities struct, calling city_add based on template string
  * Format: Name:Lat:Lon\n */
-void cities_parse_list(Cities* _Cities, const char* _cities_string)
+void cities_parse_list(const char* _cities_string)
 {
 	char* list_copy = strdup(_cities_string);
 	if (list_copy == NULL)
@@ -104,8 +116,20 @@ void cities_parse_list(Cities* _Cities, const char* _cities_string)
 			{
 				*ptr = '\0';
 
-				city_add(_Cities, name, atof(lat_str), atof(lon_str), NULL);
+        /* Check if city with same name already exists as json, skip adding it if so */
+        char filepath[256];
 
+        const char* hashed_name = MD5_HashToString(name, strlen(name));
+
+        snprintf(filepath, sizeof(filepath), "%s%s.json", CITIES_PATH, hashed_name);
+
+        if (!file_exists(filepath))
+        {
+          if (city_save_to_file(name, filepath, atof(lat_str), atof(lon_str)) != 0)
+            printf("Failed to save %s to json..", name);
+        }
+
+        /* Reset variables */
 				name = NULL;
 				lat_str = NULL;
 				lon_str = NULL;
@@ -116,6 +140,45 @@ void cities_parse_list(Cities* _Cities, const char* _cities_string)
 
 	} while (*ptr != '\0'); /* Unless next pointer is a null terminator we keep going */
 	free(list_copy);
+}
+
+/* Reads all files in cities json directory for saved cities and adds them to Cities struct */
+void cities_parse_files(Cities* _Cities)
+{
+  tinydir_dir dir;
+  tinydir_open(&dir, CITIES_PATH);
+
+  /* Loop through all files in dir */
+  while (dir.has_next)
+  {
+    tinydir_file file;
+    tinydir_readfile(&dir, &file);
+
+    /* Only parse files with .json extension */
+    if (strcmp( (file.name + strlen(file.name)) - strlen(".json"), ".json" ) == 0) 
+    {
+      char* full_path = stringcat(CITIES_PATH, file.name);
+
+      json_t* json = json_load_from_file(full_path);
+
+      json_t* json_name = json_object_get(json, "city_name");
+      json_t* json_lat = json_object_get(json, "latitude");
+      json_t* json_lon = json_object_get(json, "longitude");
+
+      /* If above objects are fine we can add values to a new City struct */
+      if (json_is_string(json_name) && json_is_real(json_lat) && json_is_real(json_lon))
+      {
+        city_add(_Cities, 
+          strdup(json_string_value(json_name)), 
+          (float)json_real_value(json_lat), 
+          (float)json_real_value(json_lat), 
+          NULL);
+      }
+      free(full_path);
+    }
+    tinydir_next(&dir);
+  }
+  tinydir_close(&dir);
 }
 
 /* Add new City struct to Cities struct */
@@ -132,12 +195,6 @@ int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_
   New_City->name = strdup(_name);
   New_City->lat = _lat;
   New_City->lon = _lon;
-  
-  if (city_save_to_file(New_City->name, New_City->lat, New_City->lon) != 0)
-  {
-    printf("Failed to save %s to json", _name);
-    return -2;
-  }
 
   New_City->prev = NULL;
   New_City->next = NULL;
@@ -146,7 +203,7 @@ int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_
   New_City->weather = NULL;
   New_City->forecast = NULL;
 
-  if (_Cities->tail == NULL) /* If no city added yet */
+  if (_Cities->tail == NULL) /* If no City added to Cities yet */
   {
     _Cities->head = New_City;
     _Cities->tail = New_City;
@@ -239,16 +296,8 @@ void city_remove(Cities* _Cities, City* _City)
 }
 
 /* Creates json file containing city name and coordinates */
-int city_save_to_file(const char* _city_name, float _lat, float _lon)
+int city_save_to_file(const char* _filepath, const char* _city_name, float _lat, float _lon)
 {
-  create_directory_if_not_exists("./data/cities");
-
-  char filepath[256];
-
-  const char* hashed_city_name = MD5_HashToString(_city_name, strlen(_city_name));
-
-  snprintf(filepath, sizeof(filepath), "./data/cities/%s.json", hashed_city_name);
-
   /* Create new JSON with city info */
   json_t* city_data = json_object();
   json_object_set_new(city_data, "city_name", json_string(_city_name));
@@ -256,18 +305,20 @@ int city_save_to_file(const char* _city_name, float _lat, float _lon)
   json_object_set_new(city_data, "longitude", json_real(_lon));
 
   /* Save json to file and cleanup jansson object */
-  json_save_to_file(city_data, filepath);
+  json_save_to_file(city_data, _filepath);
   json_decref(city_data);
 
   return 0;
 }
 
 /* Call meteo functions for given City's weather data */
-int city_get_temperature(City* _City)
+int city_get_temperature(City* _City, bool _forecast)
 {
+  int result = -1;
+
   /* Allocate weather struct if not already allocated */
   if (_City->weather == NULL) {
-    _City->weather = (Weather*)calloc(1, sizeof(Weather));
+    _City->weather = (Weather*)calloc(1, sizeof(Weather)); /* Do we free this anywhere? */
     if (_City->weather == NULL) {
       printf("Failed to allocate memory for weather data\n");
       return -1;
@@ -276,13 +327,24 @@ int city_get_temperature(City* _City)
 
   /* Call meteo without direct mention of what City nor Cities is */
   json_t* full_weather_json = NULL;
-  int result = meteo_get_current_weather(_City->lat, _City->lon, _City->weather, &full_weather_json);
-  
-  /* Save weather data to city-specific file */
-  if (result == 0 && full_weather_json != NULL) {
-    json_decref(full_weather_json);
+  if (!_forecast)
+  {
+    result = meteo_get_current_weather(_City->lat, _City->lon, _City->weather, &full_weather_json);
+    if (result == 0 && full_weather_json != NULL) 
+    {
+      json_decref(full_weather_json);
+    }
+
+    return result;
+  }
+  else
+  {
+    printf("meteo_get_forecast_weather() but unironically\n");
+
+    return result;
   }
   
+  printf("Failed to get weather...\n");
   return result;
 }
 

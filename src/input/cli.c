@@ -161,76 +161,76 @@ int cli_init(Cities* _Cities) {
             break;
           }
 
-          result = city_get_temperature(Selected_City);
+          result = city_get_temperature(Selected_City, false);
           if (result != 0) {
             printf("Något gick fel med att hämta väderdata! (Kod: %i)\n", result);
           }
-        else
+          else
           {
-              const char* description = get_weather_description(Selected_City->weather->weather_code);
-              const char* ascii = get_weather_ascii_art(Selected_City->weather->weather_code);
-              
-              const int CONTENT_WIDTH = 42;
-              
-              printf("\n");
-              printf("╔══════════════════════════════════════════╗\n");
-              
-              /* Header */
-              char header_buffer[128];
-              snprintf(header_buffer, sizeof(header_buffer), "  Väder för: %s", Selected_City->name);
-              print_fixed_line(header_buffer, CONTENT_WIDTH);
-              
-              printf("╠══════════════════════════════════════════╣\n");
-              
-              /* ASCII art */
-              char ascii_copy[512];
-              strncpy(ascii_copy, ascii, sizeof(ascii_copy) - 1);
-              ascii_copy[sizeof(ascii_copy) - 1] = '\0';
-              
-              char* line = strtok(ascii_copy, "\n");
-              while (line != NULL) {
-                  char ascii_line[128];
-                  snprintf(ascii_line, sizeof(ascii_line), " %s ", line);
-                  print_fixed_line(ascii_line, CONTENT_WIDTH);
-                  line = strtok(NULL, "\n");
-              }
-              
-              /* Empty line */
-              print_fixed_line("", CONTENT_WIDTH);
-              
-              /* Weather description */
-              char desc_buffer[128];
-              snprintf(desc_buffer, sizeof(desc_buffer), "  %s", description);
-              print_fixed_line(desc_buffer, CONTENT_WIDTH);
-              
-              /* Empty line */
-              print_fixed_line("", CONTENT_WIDTH);
-              
-              /* Weather data */
-              char line_buffer[128];
-              
-              
-              snprintf(line_buffer, sizeof(line_buffer), "  Temperatur:    %.1lf %s", 
-                      Selected_City->weather->temperature,
-                      Selected_City->weather->temperature_unit);
-              print_fixed_line(line_buffer, CONTENT_WIDTH);
-              
-              snprintf(line_buffer, sizeof(line_buffer), "  Vindstyrka:    %.1lf %s",
-                      Selected_City->weather->windspeed,
-                      Selected_City->weather->windspeed_unit);
-              print_fixed_line(line_buffer, CONTENT_WIDTH);
-              
-              snprintf(line_buffer, sizeof(line_buffer), "  Vindriktning:  %.0lf %s",
-                      Selected_City->weather->winddirection,
-                      Selected_City->weather->winddirection_unit);
-              print_fixed_line(line_buffer, CONTENT_WIDTH);
-              
-              snprintf(line_buffer, sizeof(line_buffer), "  Nederbörd:     %.2lf %s",
-                      Selected_City->weather->precipitation,
-                      Selected_City->weather->precipitation_unit);
-              print_fixed_line(line_buffer, CONTENT_WIDTH);
-              
-              printf("╚══════════════════════════════════════════╝\n\n");
+            const char* description = get_weather_description(Selected_City->weather->weather_code);
+            const char* ascii = get_weather_ascii_art(Selected_City->weather->weather_code);
+            
+            const int CONTENT_WIDTH = 42;
+            
+            printf("\n");
+            printf("╔══════════════════════════════════════════╗\n");
+            
+            /* Header */
+            char header_buffer[128];
+            snprintf(header_buffer, sizeof(header_buffer), "  Väder för: %s", Selected_City->name);
+            print_fixed_line(header_buffer, CONTENT_WIDTH);
+            
+            printf("╠══════════════════════════════════════════╣\n");
+            
+            /* ASCII art */
+            char ascii_copy[512];
+            strncpy(ascii_copy, ascii, sizeof(ascii_copy) - 1);
+            ascii_copy[sizeof(ascii_copy) - 1] = '\0';
+            
+            char* line = strtok(ascii_copy, "\n");
+            while (line != NULL) {
+              char ascii_line[128];
+              snprintf(ascii_line, sizeof(ascii_line), " %s ", line);
+              print_fixed_line(ascii_line, CONTENT_WIDTH);
+              line = strtok(NULL, "\n");
+            }
+            
+            /* Empty line */
+            print_fixed_line("", CONTENT_WIDTH);
+            
+            /* Weather description */
+            char desc_buffer[128];
+            snprintf(desc_buffer, sizeof(desc_buffer), "  %s", description);
+            print_fixed_line(desc_buffer, CONTENT_WIDTH);
+            
+            /* Empty line */
+            print_fixed_line("", CONTENT_WIDTH);
+            
+            /* Weather data */
+            char line_buffer[128];
+            
+            
+            snprintf(line_buffer, sizeof(line_buffer), "  Temperatur:    %.1lf %s", 
+              Selected_City->weather->temperature,
+              Selected_City->weather->temperature_unit);
+            print_fixed_line(line_buffer, CONTENT_WIDTH);
+            
+            snprintf(line_buffer, sizeof(line_buffer), "  Vindstyrka:    %.1lf %s",
+              Selected_City->weather->windspeed,
+              Selected_City->weather->windspeed_unit);
+            print_fixed_line(line_buffer, CONTENT_WIDTH);
+            
+            snprintf(line_buffer, sizeof(line_buffer), "  Vindriktning:  %.0lf %s",
+              Selected_City->weather->winddirection,
+              Selected_City->weather->winddirection_unit);
+            print_fixed_line(line_buffer, CONTENT_WIDTH);
+            
+            snprintf(line_buffer, sizeof(line_buffer), "  Nederbörd:     %.2lf %s",
+              Selected_City->weather->precipitation,
+              Selected_City->weather->precipitation_unit);
+            print_fixed_line(line_buffer, CONTENT_WIDTH);
+            
+            printf("╚══════════════════════════════════════════╝\n\n");
           }
         }
         else {
