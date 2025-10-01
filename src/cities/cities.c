@@ -175,7 +175,7 @@ void cities_parse_files(Cities* _Cities)
         city_add(_Cities, 
           strdup(json_string_value(json_name)), 
           (float)json_real_value(json_lat), 
-          (float)json_real_value(json_lat), 
+          (float)json_real_value(json_lon), 
           NULL);
       }
       free(full_path);
@@ -273,7 +273,6 @@ int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _
 /* Remove City struct from Cities struct */
 void city_remove(Cities* _Cities, City* _City)
 {
-  
 	if (_City->next == NULL && _City->prev == NULL)  /* I'm alone :( */
 	{
 		_Cities->head = NULL;
@@ -345,6 +344,7 @@ int city_get_temperature(City* _City, bool _forecast)
   json_t* full_weather_json = NULL;
   if (!_forecast)
   {
+    printf("CITY: %s, LON: %f, LAT: %f\n", _City->name, _City->lat, _City->lon);
     result = meteo_get_current_weather(_City->lat, _City->lon, _City->weather, &full_weather_json);
     if (result == 0 && full_weather_json != NULL) 
     {
