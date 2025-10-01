@@ -13,10 +13,15 @@ void cities_parse_list(const char* _list);
 
 void cities_parse_files(Cities* _Cities);
 
-/*==============================================*/
+const char* city_hash_name(const char* _name, const char* _lat, const char* _lon);
+
+/*============== Global variables ==============*/
 
 const char* CITIES_PATH = "./data/cities/";
-const char* CACHE_PATH = "./data/cities/";
+
+const char* CACHE_PATH = "./data/cache/";
+
+/*==============================================*/
 
 int cities_init(Cities* _Cities)
 {
@@ -116,16 +121,15 @@ void cities_parse_list(const char* _cities_string)
 			{
 				*ptr = '\0';
 
-        /* Check if city with same name already exists as json, skip adding it if so */
+        /* Define where city should be saved */
         char filepath[256];
-
-        const char* hashed_name = MD5_HashToString(name, strlen(name));
-
+        const char* hashed_name = city_hash_name(name, lat_str, lon_str);
         snprintf(filepath, sizeof(filepath), "%s%s.json", CITIES_PATH, hashed_name);
 
+        /* Check if city with same name already exists as json, skip adding it if so */
         if (!file_exists(filepath))
         {
-          if (city_save_to_file(name, filepath, atof(lat_str), atof(lon_str)) != 0)
+          if (city_save_to_file(filepath, name, atof(lat_str), atof(lon_str)) != 0)
             printf("Failed to save %s to json..", name);
         }
 
@@ -309,6 +313,18 @@ int city_save_to_file(const char* _filepath, const char* _city_name, float _lat,
   json_decref(city_data);
 
   return 0;
+}
+
+/* Creates hashed name from name+lat+lon */
+const char* city_hash_name(const char* _name, const char* _lat, const char* _lon)
+{
+  char* lat_lon = stringcat(_lat, _lon);
+  char* name_lat_lon = stringcat(_name, lat_lon);
+  const char* hashed_name = MD5_HashToString(name_lat_lon, strlen(name_lat_lon));
+  free(lat_lon);
+  free(name_lat_lon);
+
+  return hashed_name;
 }
 
 /* Call meteo functions for given City's weather data */
