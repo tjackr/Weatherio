@@ -273,6 +273,17 @@ int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _
 /* Remove City struct from Cities struct */
 void city_remove(Cities* _Cities, City* _City)
 {
+
+  /* If weather structs are populated, free them */
+  if (_City->forecast != NULL)
+  {
+    free(_City->forecast);
+  }
+  if (_City->weather != NULL)
+  {
+    free(_City->weather);
+  }
+
 	if (_City->next == NULL && _City->prev == NULL)  /* I'm alone :( */
 	{
 		_Cities->head = NULL;
@@ -344,7 +355,6 @@ int city_get_temperature(City* _City, bool _forecast)
   json_t* full_weather_json = NULL;
   if (!_forecast)
   {
-    printf("CITY: %s, LON: %f, LAT: %f\n", _City->name, _City->lat, _City->lon);
     result = meteo_get_current_weather(_City->lat, _City->lon, _City->weather, &full_weather_json);
     if (result == 0 && full_weather_json != NULL) 
     {
@@ -365,7 +375,12 @@ int city_get_temperature(City* _City, bool _forecast)
 }
 
 /* Dispose of cities struct */
-void cities_dispose(Cities* _c)
+void cities_dispose(Cities* _Cities)
 {
-	_c++;
+  /* Call city_remove on each city until Cities no longer has a head */
+  while (_Cities->head != NULL)
+  {
+    City* City = _Cities->head;
+    city_remove(_Cities, City);
+  }
 }
