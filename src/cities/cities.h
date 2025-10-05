@@ -5,21 +5,20 @@
 #include "../meteo/meteo.h"
 
 
-typedef struct City City;
-
 typedef struct City
 {
-	City*     prev;
-	City*     next;
+    struct City* prev;
+    struct City* next;
 
-	char*     name;
-	float     lat;
-	float     lon;
+    char* name;
+    float lat;
+    float lon;
 
-  Weather*  weather;
-  Forecast* forecast;
+    Weather*  weather;
+    Forecast* forecast;
 
 } City;
+
 
 typedef struct
 {
