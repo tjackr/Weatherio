@@ -56,7 +56,7 @@ char *strdup(const char *_str) {
  * (goes without saying but needs to be freed by caller) */
 char* stringcat(const char* a, const char* b)
 {
-  size_t len = strlen(b) + strlen(b);
+  size_t len = strlen(a) + strlen(b) + 1;
   char* ab = (char*)malloc(sizeof(char) * len);
   strcpy(ab, a);
   strcat(ab, b);

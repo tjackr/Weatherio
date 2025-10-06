@@ -13,13 +13,13 @@ void cities_parse_list(const char* _list);
 
 void cities_parse_files(Cities* _Cities);
 
-const char* city_hash_name(const char* _name, const char* _lat, const char* _lon);
+char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon);
 
 /*============== Global variables ==============*/
 
-const char* CITIES_PATH = "./data/cities/";
-
 const char* CACHE_PATH = "./data/cache/";
+
+const char* CITIES_PATH = "./data/cities/";
 
 /*==============================================*/
 
@@ -77,7 +77,7 @@ int cities_print(Cities* _Cities)
   return i;
 }
 
-/* Populates our Cities struct, calling city_add based on template string
+/* Populates cities json files, calling city_save_to_file based on template cities string
  * Format: Name:Lat:Lon\n */
 void cities_parse_list(const char* _cities_string)
 {
@@ -122,9 +122,7 @@ void cities_parse_list(const char* _cities_string)
 				*ptr = '\0';
 
         /* Define where city should be saved */
-        char filepath[256];
-        const char* hashed_name = city_hash_name(name, lat_str, lon_str);
-        snprintf(filepath, sizeof(filepath), "%s%s.json", CITIES_PATH, hashed_name);
+        char* filepath = city_hashed_filepath(name, lat_str, lon_str);
 
         /* Check if city with same name already exists as json, skip adding it if so */
         if (!file_exists(filepath))
@@ -132,6 +130,9 @@ void cities_parse_list(const char* _cities_string)
           if (city_save_to_file(filepath, name, atof(lat_str), atof(lon_str)) != 0)
             printf("Failed to save %s to json..", name);
         }
+
+        /* hashed path needs to be freed*/
+        free(filepath);
 
         /* Reset variables */
 				name = NULL;
@@ -325,16 +326,23 @@ int city_save_to_file(const char* _filepath, const char* _city_name, float _lat,
   return 0;
 }
 
-/* Creates hashed name from name+lat+lon */
-const char* city_hash_name(const char* _name, const char* _lat, const char* _lon)
+/* Returns json filepath with hashed city name+lat+lon 
+ * Needs to be freed by caller */
+char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon)
 {
   char* lat_lon = stringcat(_lat, _lon);
   char* name_lat_lon = stringcat(_name, lat_lon);
   const char* hashed_name = MD5_HashToString(name_lat_lon, strlen(name_lat_lon));
+
+  char* ext = ".json";
+  char* filename = stringcat(hashed_name, ext);
+  char* filepath = stringcat(CITIES_PATH, filename);
+
   free(lat_lon);
   free(name_lat_lon);
+  free(filename);
 
-  return hashed_name;
+  return filepath;
 }
 
 /* Call meteo functions for given City's weather data */
