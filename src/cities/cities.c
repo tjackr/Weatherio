@@ -363,7 +363,7 @@ int city_get_temperature(City* _City, bool _forecast)
   json_t* full_weather_json = NULL;
   if (!_forecast)
   {
-    result = meteo_get_current_weather(_City->lat, _City->lon, _City->weather, &full_weather_json);
+    result = meteo_get_weather(_City->lat, _City->lon, _City->weather, &full_weather_json, true);
     if (result == 0 && full_weather_json != NULL) 
     {
       json_decref(full_weather_json);

@@ -34,7 +34,7 @@ typedef struct
 } Forecast;
 
 
-int meteo_get_current_weather(float _lat, float _lon, Weather* weather, json_t** _full_json);
+int meteo_get_weather(float _lat, float _lon, Weather* weather, json_t** _full_json, bool _forecast);
 
 
 #endif 

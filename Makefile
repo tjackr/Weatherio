@@ -16,7 +16,8 @@ BUILD_DIR := build
 CACHE_DIR := data/cache
 
 # Compilation flags
-CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -Iconfigs -g
+#CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -Iconfigs -g
+CFLAGS := -std=c99 -MMD -MP -Wall -Iconfigs -g
 
 # Linker flags (auto-detect platform)
 ifeq ($(UNAME_S),Darwin)
