@@ -32,9 +32,9 @@ int meteo_build_url(char* _url, float _lat, float _lon, bool _forecast)
   char* params;
 
   if (_forecast)
-    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto";
+    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=GMT";
   else
-    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto";
+    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=GMT";
 
   /* Might wanna handle this more safely C89 style */
   sprintf(_url, 
@@ -170,44 +170,131 @@ int meteo_set_forecast_weather(Forecast* _forecast, const char* _filepath, json_
     return -1;
   }
 
-  json_t* hourly = json_object_get(json, "hourly");
-/*  json_t* hourly_units = json_object_get(json, "hourly_units"); */
 
-  if (!hourly /*||  !hourly_units */) 
-  {
-    printf("Failed to get weather data objects from JSON\n");
-    json_decref(json);
-    return -2;
-  }
-  int hours = json_object_size(hourly);
-  if (hours != 0) 
-  {
 
+  // if (hours != 0) 
+  {
 
     json_t* json_weather = json_object_get(json, "hourly");
-    /*json_t* json_weather_units = json_object_get(json, "hourly_units");*/
-
-    /* Allocate memory in Forecast for as many Weather structs we need */
-    _forecast->weather = (Weather*)malloc(sizeof(Weather*) * (size_t)hourly);
-
+    json_t* json_weather_units = json_object_get(json, "hourly_units");
+    
+    if (!json_weather ||  !json_weather_units) 
+    {
+      printf("Failed to get weather data objects from JSON\n");
+      json_decref(json);
+      return -1;
+    }
 
     //char* key;
 
+    
+    json_t* json_temperature_unit = json_object_get(json_weather_units, "temperature_2m");
+    json_t* json_windspeed_unit = json_object_get(json_weather_units, "wind_speed_10m");
+    json_t* json_winddirection_unit = json_object_get(json_weather_units, "wind_direction_10m");
+    json_t* json_precipitation_unit = json_object_get(json_weather_units, "precipitation");
+
+    if (!json_is_string(json_temperature_unit) ||  
+      !json_is_string(json_windspeed_unit) ||
+      !json_is_string(json_winddirection_unit) ||
+      !json_is_string(json_precipitation_unit))
+    {
+      printf("Missing or invalid units in JSON\n");
+      return -2;
+    }
+
     size_t index;
     json_t* json_times = json_object_get(json_weather, "time");
+    json_t* json_temperature = json_object_get(json_weather, "temperature_2m");
+    json_t* json_windspeed = json_object_get(json_weather, "wind_speed_10m");
+    json_t* json_winddirection = json_object_get(json_weather, "wind_direction_10m");
+    json_t* json_precipitation = json_object_get(json_weather, "precipitation");
+    json_t* json_weathercode = json_object_get(json_weather, "weather_code");
     json_t* array_value;
+
+    size_t hours = json_array_size(json_times);
+
+    /* Allocate memory in Forecast for as many Weather structs we need */
+    _forecast->weather = malloc(sizeof(Weather) * hours);
+
     json_array_foreach(json_times, index, array_value) {
+      Weather hour_weather = {0};
 
-      if (json_is_object(array_value)) {
-        //Weather* hour_weather;
+      hour_weather.temperature_unit = json_string_value(json_temperature_unit);
+      hour_weather.windspeed_unit = json_string_value(json_windspeed_unit);
+      hour_weather.winddirection_unit = json_string_value(json_winddirection_unit);
+      hour_weather.precipitation_unit = json_string_value(json_precipitation_unit);
 
-        json_t* prop = json_object_get(array_value, "time");
-        if (json_is_string(prop)) 
-        {
-          printf("%s\n", json_string_value(prop));
-        }
+      json_t* hour_time = json_array_get(json_times, index);
+      json_t* hour_temperature = json_array_get(json_temperature, index);
+      json_t* hour_windspeed = json_array_get(json_windspeed, index);
+      json_t* hour_winddirection = json_array_get(json_winddirection, index);
+      json_t* hour_precipitation = json_array_get(json_precipitation, index);
+      json_t* hour_weathercode = json_array_get(json_weathercode, index);
+
+      if (!json_is_number(hour_temperature) ||  
+        !json_is_number(hour_windspeed) ||
+        !json_is_number(hour_winddirection) ||
+        !json_is_number(hour_precipitation) ||
+        !json_is_integer(hour_weathercode)) 
+      {
+        printf("Missing or invalid weather data fields in JSON\n");
+        return -3;
       }
+
+      /* Timestamp */
+      const char* str_timestamp = strdup(json_string_value(hour_time));
+      time_t epoch = parse_time_string(str_timestamp);
+      hour_weather.timestamp = epoch;
+      printf("time_t: %lld\n", hour_weather.timestamp);
+      
+      /* Temperature */
+      double temperature = json_real_value(hour_temperature);
+      hour_weather.temperature = temperature;
+      printf("temperature: %lf\n", hour_weather.temperature);
+
+      /* Windspeed */
+      double windspeed = json_real_value(hour_windspeed);
+      hour_weather.windspeed = windspeed;
+      printf("windspeed: %lf\n", hour_weather.windspeed);
+
+      /* Winddirection */
+      int winddirection = json_integer_value(hour_winddirection);
+      hour_weather.winddirection = winddirection;
+      printf("wind direction: %i\n", hour_weather.winddirection);
+      
+      /* Precipitation */
+      int precipitation = json_real_value(hour_precipitation);
+      hour_weather.precipitation = precipitation;
+      printf("Precipitation: %lf\n", hour_weather.precipitation);
+      
+      /* Weather code */
+      int weather_code = json_integer_value(hour_weathercode);
+      hour_weather.weather_code = weather_code;
+      printf("Weather code: %i\n", hour_weather.weather_code);
+
+
+
+      _forecast->weather[index] = hour_weather;
+
     }
+
+    
+
+
+
+    // json_t* json_temperature = json_object_get(json_weather, "temperature_2m");
+    // json_array_foreach(json_temperature, index, array_value) {
+    //   Weather* hour_weather;
+
+    //   json_t* json_hour = json_array_get(json_times, index);
+
+    //   if (json_is_string(json_hour)) 
+    //   {
+    //     printf("%s\n", json_string_value(json_hour));
+    //     hour_weather->timestamp = json_string_value(json_hour);
+    //   }
+    // }
+    
 /*
     json_object_foreach(json_hourly, key, value) {
       if (json_is_array(value)) {
@@ -336,9 +423,9 @@ int meteo_get_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_
   if (result != 0)
     return result;
 
-  Forecast* forecast;
+  Forecast forecast = {0};
 
-  result = meteo_set_forecast_weather(forecast, filepath, _full_json);
+  result = meteo_set_forecast_weather(&forecast, filepath, _full_json);
   if (result != 0)
     return result;
 

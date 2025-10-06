@@ -107,14 +107,10 @@ static void print_fixed_line(const char *text, int width) {
 int display_menu(void)
 {
   int choice;
-  printf("\n");
-  printf("🌦️  ╔══════════════════════════════════╗\n");
-  printf("🌦️  ║          🌍  HUVUDMENY  🌍        ║\n");
-  printf("🌦️  ╠══════════════════════════════════╣\n");
-  printf("🌦️  ║  1️⃣  Visa väderdata för en stad   ║\n");
-  printf("🌦️  ║  2️⃣  Avsluta programmet           ║\n");
-  printf("🌦️  ╚══════════════════════════════════╝\n");
-  printf("\n👉  Välj ett alternativ (1-2): ");
+  printf("\n=== HUVUDMENY ===\n");
+  printf("1. Visa väderdata för en stad\n");
+  printf("2. Avsluta programmet\n");
+  printf("Välj alternativ (1-2): ");
   
   scanf("%5i", &choice);
   clear_input();
@@ -126,21 +122,16 @@ int display_menu(void)
 int cli_init(Cities* _Cities) {
 
   int result;
-  printf(
-  "\n\n"
-  "🌤️  ================================================== 🌤️\n"
-  "      ☀️  Varmt välkommen till  🌦️\n"
-  "      ------------------------------------\n"
-  "           ▖  ▖    ▗ ▌     ▘  ▌\n"
-  "           ▌▞▖▌█▌▀▌▜▘▛▌█▌▛▘▌▛▌▌\n"
-  "           ▛ ▝▌▙▖█▌▐▖▌▌▙▖▌ ▌▙▌▖\n"
-  "      ------------------------------------\n"
-  "      🌍  WEATHERIO  |  Din väderguide med stil 🌦️\n"
-  "🌤️  ================================================== 🌤️\n\n"
-  "📍  Börja med att välja den stad du vill se väder för.\n"
-  "🧭  Använd piltangenterna eller skriv namnet på staden.\n\n"
-);
-
+  printf("\n\n"
+    "Varmt välkommen till \n"
+    "--------------------\n"
+    "▖  ▖    ▗ ▌     ▘  ▌\n"
+    "▌▞▖▌█▌▀▌▜▘▛▌█▌▛▘▌▛▌▌\n"
+    "▛ ▝▌▙▖█▌▐▖▌▌▙▖▌ ▌▙▌▖\n"
+    "--------------------\n\n\n"
+    "Börja med att välja den stad du vill se väder från."
+    "\n\n"
+  );
 
   int running = 1;
   
@@ -158,7 +149,7 @@ int cli_init(Cities* _Cities) {
         int cities_count = cities_print(_Cities);
         int input_choice = 0;
 
-        printf("\n📍 Välj stad: ");
+        printf("\nVälj stad: ");
         scanf("%5i", &input_choice);
         clear_input();
 
@@ -219,22 +210,22 @@ int cli_init(Cities* _Cities) {
             char line_buffer[128];
             
             
-            snprintf(line_buffer, sizeof(line_buffer), " 🌡️ Temperatur:    %.1lf %s", 
+            snprintf(line_buffer, sizeof(line_buffer), "  Temperatur:    %.1lf %s", 
               Selected_City->weather->temperature,
               Selected_City->weather->temperature_unit);
             print_fixed_line(line_buffer, CONTENT_WIDTH);
             
-            snprintf(line_buffer, sizeof(line_buffer), " 🌪️ Vindstyrka:    %.1lf %s",
+            snprintf(line_buffer, sizeof(line_buffer), "  Vindstyrka:    %.1lf %s",
               Selected_City->weather->windspeed,
               Selected_City->weather->windspeed_unit);
             print_fixed_line(line_buffer, CONTENT_WIDTH);
             
-            snprintf(line_buffer, sizeof(line_buffer), " 💨 Vindriktning:  %.0lf %s",
+            snprintf(line_buffer, sizeof(line_buffer), "  Vindriktning:  %.0lf %s",
               Selected_City->weather->winddirection,
               Selected_City->weather->winddirection_unit);
             print_fixed_line(line_buffer, CONTENT_WIDTH);
             
-            snprintf(line_buffer, sizeof(line_buffer), " 🌧️ Nederbörd:     %.2lf %s",
+            snprintf(line_buffer, sizeof(line_buffer), "  Nederbörd:     %.2lf %s",
               Selected_City->weather->precipitation,
               Selected_City->weather->precipitation_unit);
             print_fixed_line(line_buffer, CONTENT_WIDTH);

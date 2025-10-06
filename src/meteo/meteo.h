@@ -1,6 +1,7 @@
 #ifndef __Meteo_h__
 #define __Meteo_h__
 
+#include <time.h>
 #include "../includes/jansson/jansson.h"
 
 
@@ -9,7 +10,7 @@
 
 typedef struct
 {
-  double      timestamp;
+  time_t      timestamp;
   int         weather_code; 
 
   double      temperature; 
@@ -18,7 +19,7 @@ typedef struct
   double      windspeed; 
   char*       windspeed_unit;
 
-  double      winddirection; 
+  int         winddirection; 
   char*       winddirection_unit;
 
   double      precipitation;
