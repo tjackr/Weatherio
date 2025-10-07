@@ -1,6 +1,11 @@
 # Weatherio
 
-**Insert fancy introduction here**
+**CLI weather application written in C99**
+
+Features:
+- Uses open-meteo API to get weather data from a city
+- Fancy CLI interface
+- Linked list & cache layers
 
 ## Table of Contents
 
@@ -35,6 +40,10 @@ Run the CLI app:
 3. ...
 
 ## Dev Notes
+
+_src/includes_ contains mainly external source code, some which is customized. Credit to original authors is due.
+
+
 
 _This baby can't run yet_ 
 

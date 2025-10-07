@@ -10,6 +10,6 @@ int line_count(const char* _string);
 
 char* strdup(const char* _str);
 
-char* stringcat(const char* a, const char* b);
+char* stringcat(const char* _a, const char* _b);
 
 #endif
