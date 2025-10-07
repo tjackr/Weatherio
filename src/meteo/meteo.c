@@ -159,7 +159,7 @@ int meteo_update_cache(const char* _filepath, const char* _url)
 }
 
 /* Set current weather values to City's Meteo's Weather struct*/
-int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t** _full_json)
+int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t** _full_json_ptr)
 {
   json_t* json = json_load_from_file(_filepath);
   if (json == NULL) 
@@ -219,9 +219,9 @@ int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t**
 
   _Weather->weather_code = json_integer_value(weather_code);
   
-  if (_full_json != NULL) 
+  if (_full_json_ptr != NULL) 
   {
-    *_full_json = json;
+    *_full_json_ptr = json;
     json_incref(json); /* Increase reference count so it doesn't get freed */
   }
 
@@ -232,7 +232,7 @@ int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t**
 }
 
 /* Main public function for calling necessary functions needed to get individal City weather */
-int meteo_get_current_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_json)
+int meteo_get_current_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_json_ptr)
 {
   int result = 0;
 
@@ -254,7 +254,7 @@ int meteo_get_current_weather(float _lat, float _lon, Weather* _Weather, json_t*
   if (result != 0)
     return result;
 
-  result = meteo_set_current_weather(filepath, _Weather, _full_json);
+  result = meteo_set_current_weather(filepath, _Weather, _full_json_ptr);
   if (result != 0)
     return result;
 

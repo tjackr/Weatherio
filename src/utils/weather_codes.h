@@ -7,7 +7,7 @@ typedef struct {
     const char* ascii_art;
 } WeatherCode;
 
-const char* get_weather_description(int code);
-const char* get_weather_ascii_art(int code);
+const char* get_weather_description(int _code);
+const char* get_weather_ascii_art(int _code);
 
 #endif

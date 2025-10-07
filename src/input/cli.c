@@ -9,98 +9,102 @@
 
 int display_menu(void);
 
+static int utf8_display_width(const char* _str);
+
+static void print_fixed_line(const char* _text, int _width);
+
 /*==============================================*/
 
-static int utf8_display_width(const char *str) {
-    int width = 0;
-    const unsigned char *s = (const unsigned char *)str;
-    
-    while (*s) {
-        if ((*s & 0x80) == 0) {
-            /* 1-byte ASCII (0xxxxxxx) */
-            width++;
-            s++;
-        } else if ((*s & 0xE0) == 0xC0) {
-            /* 2-byte UTF-8 (110xxxxx 10xxxxxx) */
-            width++;
-            s += 2;
-        } else if ((*s & 0xF0) == 0xE0) {
-            /* 3-byte UTF-8 (1110xxxx 10xxxxxx 10xxxxxx) */
-            width++;
-            s += 3;
-        } else if ((*s & 0xF8) == 0xF0) {
-            /* 4-byte UTF-8 (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx) */
-            width++;
-            s += 4;
-        } else {
-            /* Invalid byte - skip */
-            s++;
-        }
+static int utf8_display_width(const char* _str) {
+  int width = 0;
+  const unsigned char *s = (const unsigned char*)_str;
+  
+  while (*s) {
+    if ((*s & 0x80) == 0) {
+      /* 1-byte ASCII (0xxxxxxx) */
+      width++;
+      s++;
+    } else if ((*s & 0xE0) == 0xC0) {
+      /* 2-byte UTF-8 (110xxxxx 10xxxxxx) */
+      width++;
+      s += 2;
+    } else if ((*s & 0xF0) == 0xE0) {
+      /* 3-byte UTF-8 (1110xxxx 10xxxxxx 10xxxxxx) */
+      width++;
+      s += 3;
+    } else if ((*s & 0xF8) == 0xF0) {
+      /* 4-byte UTF-8 (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx) */
+      width++;
+      s += 4;
+    } else {
+      /* Invalid byte - skip */
+      s++;
     }
-    
-    return width;
+  }
+  
+  return width;
 }
 
-/* Add this function after utf8_display_width */
-
 /* Function to print a string with fixed width */
-static void print_fixed_line(const char *text, int width) {
-    int vis_len = utf8_display_width(text);
+/* Add this function after utf8_display_width */
+static void print_fixed_line(const char* _text, int _width) 
+{
+  int vis_len = utf8_display_width(_text);
+  
+  /* If the text is too long - truncate it */
+  if (vis_len > _width) {
+    const unsigned char* s = (const unsigned char*)_text;
+    int printed = 0;
     
-    if (vis_len > width) {
-    /* If the text is too long - truncate it */
-        const unsigned char *s = (const unsigned char *)text;
-        int printed = 0;
-        
-        printf("│");
-        while (*s && printed < width) {
-            if ((*s & 0x80) == 0) {
-                /* ASCII */
-                putchar(*s);
-                s++;
-                printed++;
-            } else if ((*s & 0xE0) == 0xC0) {
-                /* 2-byte UTF-8 */
-                if (printed + 1 <= width) {
-                    putchar(*s++);
-                    putchar(*s++);
-                    printed++;
-                } else break;
-            } else if ((*s & 0xF0) == 0xE0) {
-                /* 3-byte UTF-8 */
-                if (printed + 1 <= width) {
-                    putchar(*s++);
-                    putchar(*s++);
-                    putchar(*s++);
-                    printed++;
-                } else break;
-            } else if ((*s & 0xF8) == 0xF0) {
-                /* 4-byte UTF-8 */
-                if (printed + 1 <= width) {
-                    putchar(*s++);
-                    putchar(*s++);
-                    putchar(*s++);
-                    putchar(*s++);
-                    printed++;
-                } else break;
-            } else {
-                s++;
-            }
-        }
-        
-    /* Fill the rest with spaces */
-        for (int i = printed; i < width; i++) {
-            putchar(' ');
-        }
-        printf("║\n");
-    } else {
-    /* If the text fits - print with padding */
-        printf("║%s", text);
-        for (int i = vis_len; i < width; i++) {
-            putchar(' ');
-        }
-        printf("║\n");
+    printf("│");
+    while (*s && printed < _width) {
+      if ((*s & 0x80) == 0) {
+        /* ASCII */
+        putchar(*s);
+        s++;
+        printed++;
+      } else if ((*s & 0xE0) == 0xC0) {
+        /* 2-byte UTF-8 */
+        if (printed + 1 <= _width) {
+          putchar(*s++);
+          putchar(*s++);
+          printed++;
+        } else break;
+      } else if ((*s & 0xF0) == 0xE0) {
+        /* 3-byte UTF-8 */
+        if (printed + 1 <= _width) {
+          putchar(*s++);
+          putchar(*s++);
+          putchar(*s++);
+          printed++;
+        } else break;
+      } else if ((*s & 0xF8) == 0xF0) {
+        /* 4-byte UTF-8 */
+        if (printed + 1 <= _width) {
+          putchar(*s++);
+          putchar(*s++);
+          putchar(*s++);
+          putchar(*s++);
+          printed++;
+        } else break;
+      } else {
+          s++;
+      }
     }
+    
+    /* Fill the rest with spaces */
+    for (int i = printed; i < _width; i++) {
+      putchar(' ');
+    }
+    printf("║\n");
+  } else {
+    /* If the text fits - print with padding */
+    printf("║%s", _text);
+    for (int i = vis_len; i < _width; i++) {
+      putchar(' ');
+    }
+    printf("║\n");
+  }
 }
 
 /* Display main menu and return user choice */
