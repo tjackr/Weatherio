@@ -161,7 +161,7 @@ int cli_init(Cities* _Cities) {
             break;
           }
 
-          result = city_get_temperature(Selected_City, false);
+          result = city_get_weather(Selected_City, false);
           if (result != 0) {
             printf("Något gick fel med att hämta väderdata! (Kod: %i)\n", result);
           }
@@ -220,7 +220,7 @@ int cli_init(Cities* _Cities) {
               Selected_City->weather->windspeed_unit);
             print_fixed_line(line_buffer, CONTENT_WIDTH);
             
-            snprintf(line_buffer, sizeof(line_buffer), "  Vindriktning:  %.0lf %s",
+            snprintf(line_buffer, sizeof(line_buffer), "  Vindriktning:  %i %s",
               Selected_City->weather->winddirection,
               Selected_City->weather->winddirection_unit);
             print_fixed_line(line_buffer, CONTENT_WIDTH);

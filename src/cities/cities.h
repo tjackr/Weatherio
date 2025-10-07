@@ -43,7 +43,7 @@ int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _
 
 int city_get_by_name(Cities* _Cities, const char* _Name, City** _City_Ptr);
 
-int city_get_temperature(City* _City, bool _forecast);
+int city_get_weather(City* _City, bool _forecast);
 
 void city_remove(Cities* _Cities, City* _City);
 

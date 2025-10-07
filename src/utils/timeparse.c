@@ -25,6 +25,6 @@ time_t parse_time_string(const char* _time_str)
   time_t gm_time = mktime(gm_tm);
 */
 
-  return timegm(&tm);
+  return mktime(&tm);
 }
 

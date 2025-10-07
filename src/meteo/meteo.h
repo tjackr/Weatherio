@@ -7,6 +7,11 @@
 
 #define METEO_BASE_URL "https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f%s"
 
+/*============== Global variables ==============*/
+
+extern const char* CACHE_PATH;
+
+/*==============================================*/
 
 typedef struct
 {
@@ -14,16 +19,16 @@ typedef struct
   int         weather_code; 
 
   double      temperature; 
-  char*       temperature_unit; 
+  const char* temperature_unit; 
 
   double      windspeed; 
-  char*       windspeed_unit;
+  const char* windspeed_unit;
 
   int         winddirection; 
-  char*       winddirection_unit;
+  const char* winddirection_unit;
 
   double      precipitation;
-  char*       precipitation_unit;
+  const char* precipitation_unit;
 
 } Weather;
 
@@ -35,7 +40,9 @@ typedef struct
 } Forecast;
 
 
-int meteo_get_weather(float _lat, float _lon, Weather* weather, json_t** _full_json, bool _forecast);
+int meteo_get_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_json, bool _forecast);
+
+int meteo_get_forecast(float _lat, float _lon, Forecast* _Forecast, json_t** _full_json);
 
 
 #endif 

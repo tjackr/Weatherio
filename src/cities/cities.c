@@ -17,9 +17,7 @@ char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon
 
 /*============== Global variables ==============*/
 
-const char* CACHE_PATH = "./data/cache/";
-
-const char* CITIES_PATH = "./data/cities/";
+const char* CITIES_PATH = "./data/cache/";
 
 /*==============================================*/
 
@@ -346,7 +344,7 @@ char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon
 }
 
 /* Call meteo functions for given City's weather data */
-int city_get_temperature(City* _City, bool _forecast)
+int city_get_weather(City* _City, bool _forecast)
 {
   int result = -1;
 
@@ -363,6 +361,7 @@ int city_get_temperature(City* _City, bool _forecast)
   json_t* full_weather_json = NULL;
   if (!_forecast)
   {
+    
     result = meteo_get_weather(_City->lat, _City->lon, _City->weather, &full_weather_json, true);
     if (result == 0 && full_weather_json != NULL) 
     {
