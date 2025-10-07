@@ -17,8 +17,6 @@ char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon
 
 /*============== Global variables ==============*/
 
-const char* CACHE_PATH = "./data/cache/";
-
 const char* CITIES_PATH = "./data/cities/";
 
 /*==============================================*/

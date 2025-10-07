@@ -17,6 +17,7 @@ CACHE_DIR := data/cache
 
 # Compilation flags
 CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -Iconfigs -g
+#CFLAGS := -std=c99 -MMD -MP -Wall -Iconfigs -g
 
 # Linker flags (auto-detect platform)
 ifeq ($(UNAME_S),Darwin)
@@ -40,35 +41,30 @@ DEP := $(OBJ:.o=.d)
 # Binary name
 BIN := Weatherio
 
-# Colors
-GREEN := \033[0;32m
-BLUE  := \033[1;34m
-RESET := \033[0m
-
 # ========================
 # Build rules
 # ========================
 
 all: $(BIN)
-	@echo "$(GREEN)✅ Build complete.$(RESET)"
+	@echo "✅ Build complete."
 
 $(BIN): $(OBJ)
-	@echo "$(BLUE)🔗 Linking...$(RESET)"
+	@echo "🔗 Linking..."
 	@$(CC) $(LDFLAGS) $(OBJ) -o $@ $(LIBS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	@echo "$(BLUE)⚙️  Compiling $<...$(RESET)"
+	@echo "⚙️  Compiling $<..."
 	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(BIN)
-	@echo "$(GREEN)🚀 Running Weatherio...$(RESET)"
+	@echo "🚀 Running Weatherio..."
 	@./$(BIN)
 
 clean:
-	@echo "$(BLUE)🧹 Cleaning build files...$(RESET)"
+	@echo "🧹 Cleaning build files..."
 	@rm -rf $(BUILD_DIR) $(CACHE_DIR) $(BIN)
-	@echo "$(GREEN)✨ Clean complete.$(RESET)"
+	@echo "✨ Clean complete."
 
 print:
 	@echo "Källfiler: $(SRC)"

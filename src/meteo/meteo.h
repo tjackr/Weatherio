@@ -6,6 +6,7 @@
 
 #define METEO_BASE_URL "https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f%s"
 
+extern const char* CACHE_PATH;
 
 typedef struct
 {

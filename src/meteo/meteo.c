@@ -23,6 +23,10 @@ int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t**
 
 time_t parse_time_string(const char* _time_str);
 
+/*============== Global variables ==============*/
+
+const char* CACHE_PATH = "./data/cache/";
+
 /*==============================================*/
 
 int meteo_build_url(char* _url, float _lat, float _lon, bool _current)
@@ -50,14 +54,13 @@ int meteo_define_filepath(char** _filepath, const char* _url)
  const char* hashed_url = MD5_HashToString(_url, strlen(_url));
 
   /* Create cache directory if it doesn't exist */
-  create_directory_if_not_exists("./data/cache");
+  create_directory_if_not_exists(CACHE_PATH);
 
   /* Define the filepath for our json cache */
-  char* basepath = "./data/cache/";
-  int path_size = (strlen(basepath) + strlen(hashed_url) + strlen(".json") + 1);
+  int path_size = (strlen(CACHE_PATH) + strlen(hashed_url) + strlen(".json") + 1);
   *_filepath = (char*)malloc(sizeof(char) * path_size);
 
-  strcpy(*_filepath, basepath);
+  strcpy(*_filepath, CACHE_PATH);
   strcat(*_filepath, hashed_url);
   strcat(*_filepath, ".json");
 
