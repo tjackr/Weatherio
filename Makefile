@@ -66,6 +66,10 @@ clean:
 	@rm -rf $(BUILD_DIR) $(CACHE_DIR) $(BIN)
 	@echo "✨ Clean complete."
 
+valgrind: $(BIN)
+	@echo "   Running using valgrind..."
+	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(BIN)
+
 print:
 	@echo "Källfiler: $(SRC)"
 	@echo "Objektfiler: $(OBJ)"

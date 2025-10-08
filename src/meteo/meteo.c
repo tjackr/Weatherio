@@ -13,17 +13,15 @@
 
 /*============= Internal functions =============*/
 
-int meteo_build_url(char* _url, float _lat, float _lon, bool _forecast);
+int meteo_build_url(char* _url, float _lat, float _lon, bool _hourly);
 
 int meteo_define_filepath(char** _filepath, const char* _url);
 
-int meteo_update_cache(const char* _filepath, const char* _url, bool _forecast);
+int meteo_update_cache(const char* _filepath, const char* _url, bool _hourly);
 
-int meteo_set_weather(const char* _filepath, Weather* _Weather, json_t** _full_json);
+int meteo_set_current_weather(const char* _filepath, Weather** _Weather_Ptr);
 
-int meteo_set_forecast_weather(Forecast* _forecast, const char* _filepath);
-
-time_t parse_time_string(const char* _time_str);
+int meteo_set_forecast_weather(const char* _filepath, Forecast** _Forecast_Ptr);
 
 /*============== Global variables ==============*/
 
@@ -36,9 +34,9 @@ int meteo_build_url(char* _url, float _lat, float _lon, bool _forecast)
   char* params;
 
   if (_forecast)
-    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto";
+    params = "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=GMT";
   else
-    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto";
+    params = "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=GMT";
 
   /* Might wanna handle this more safely C89 style */
   sprintf(_url, 
@@ -72,21 +70,19 @@ int meteo_define_filepath(char** _filepath, const char* _url)
 }
 
 /* Check if we have the data in our cache folder, call API if not */
-int meteo_update_cache(const char* _filepath, const char* _url, bool _forecast)
+int meteo_update_cache(const char* _filepath, const char* _url, bool _hourly)
 {
-  /* Check if cache exists
-   * Then check update interval and timestamp from json to see if it should be updated */
+  /* Check if cache exists */
 	struct stat file_info;
 	if (stat(_filepath, &file_info) == 0) 
 	{
-    int interval;
     char* str_timestamp;
-    time_t now = time(NULL);
+    time_t now = time(NULL); /* NOTE: This could return local time on some systems */
+    int interval;
 
-    /* If we're looking for current weather, use interval in json */
-    if (!_forecast)
+    /* If we're looking for current weather only, compare interval in json */
+    if (!_hourly)
     {
-
       /* Parse update interval and timestamp from cache */
       json_t* json_current = json_object_get(json_load_from_file(_filepath), "current");
       json_t* json_interval = json_object_get(json_current, "interval");
@@ -100,44 +96,57 @@ int meteo_update_cache(const char* _filepath, const char* _url, bool _forecast)
         return -2;
       str_timestamp = strdup(json_string_value(json_timestamp));
 
-      /* Eventually we should solve how to force UTC time instead of local time
-       * But for now we'll just have to set timezone=auto to open-meteo
-       * This lets them decide based on where user is sending request 
-       * So uhh, turn off your VPNs boys */
-      time_t timestamp = parse_time_string(str_timestamp);
-      if (timestamp == -1)
-        return -3;
+    } else {
+      /* If forecast data, we want to see if earliest day in cache is before today
+       * First timestamp in hourly meteo response is at midnight current day
+       * so interval will be 24 hours and reset every midnight */
 
-      double time_diff = difftime(now, timestamp);
+      interval = 86400; /* epoch value for 24 hours */
 
-      /* printf("Cache '%s' is '%.0lf' seconds old\n", _filepath, time_diff); */
+      json_t* json_hourly = json_object_get(json_load_from_file(_filepath), "hourly");
+      json_t* json_timestamps = json_object_get(json_hourly, "time");
+      json_t* json_first_time = json_array_get(json_timestamps, 0);
 
-      if (time_diff < (double)interval)
-      {
-        /*printf("Cache up to date\n");*/
+      if (!json_is_string(json_first_time) || json_string_value(json_first_time) == NULL) 
+        return -1;
 
-        return 0; 
-      }
+      str_timestamp = strdup(json_string_value(json_first_time));
+    }
+
+    time_t timestamp = parse_iso_datetime(str_timestamp);
+    if (timestamp == -1)
+      return -3;
+
+    double time_diff = difftime(now, timestamp);
+
+    printf("Cache '%s' is '%.0lf' seconds old\n", _filepath, time_diff);
+
+    /* return if cache is already up to date */
+    if (time_diff < (double)interval)
+    {
+      /*printf("Cache up to date\n");*/
+
+      return 0; 
     }
   }
 
   /* Get new cache if it isn't recent */
-  /* printf("Getting new cache... \n"); */
+  /* printf("Getting new cache (Hourly: %b)...\n", _hourly); */
 
 	HTTP Http;
 	if (http_init(&Http) != 0)
 	{
-		printf("Failed to initialize HTTP\n");
-		return -1;
+		printf("Failed to initialize HTTP client\n");
+		return -4;
 	}
 
 	int result = curl_get_response(&Http, _url);
-  printf("%s\n", Http.addr);
+  /* printf("%s\n", Http.addr); */
 	if (result != 0)
 	{
-		printf("HTTP GET request failed. Errorcode: %i\n", result);
+		printf("HTTP client failed to GET response. Errorcode: %i\n", result);
 		http_dispose(&Http);
-		return -2;
+		return -5;
 	}
 
   /* Validate JSON before saving */
@@ -146,7 +155,7 @@ int meteo_update_cache(const char* _filepath, const char* _url, bool _forecast)
   if (json == NULL) {
     printf("Invalid JSON received from API: %s\n", error.text);
     http_dispose(&Http);
-    return -3;
+    return -6;
   }
 
 	result = write_string_to_file(Http.addr, _filepath);
@@ -154,16 +163,88 @@ int meteo_update_cache(const char* _filepath, const char* _url, bool _forecast)
 	{
 		printf("Failed to write JSON to file: %i\n", result);
 		http_dispose(&Http);
-		return -4;
+		return -7;
 	}
 
   json_decref(json);
   return 0; 
 }
 
-int meteo_set_forecast_weather(Forecast* _forecast, const char* _filepath)
+/* Set current weather values to Weather struct from saved json cache */
+int meteo_set_current_weather(const char* _filepath, Weather** _Weather_Ptr)
 {
-  printf("filepath: %s\n", _filepath);
+  /* Allocate weather struct if not already allocated */
+  if (*_Weather_Ptr == NULL) {
+    printf("Allocating memory for weather..\n");
+    *_Weather_Ptr = (Weather*)calloc(1, sizeof(Weather)); 
+    if (*_Weather_Ptr == NULL) {
+      printf("Failed to allocate memory for weather struct\n");
+      return -1;
+    }
+  }
+
+  /* Call helper to load json root from file */
+  json_t* json = json_load_from_file(_filepath);
+  if (json == NULL) 
+  {
+    printf("Failed to load JSON from file: %s\n", _filepath);
+    return -2;
+  }
+
+  /* Get main objects */
+  json_t* current_weather = json_object_get(json, "current");
+  json_t* current_weather_units = json_object_get(json, "current_units");
+
+  if (!current_weather || !current_weather_units) 
+  {
+    printf("Failed to get weather data objects from JSON\n");
+    return -3;
+  }
+
+  /* Get weather values */
+  json_t* temperature = json_object_get(current_weather, "temperature_2m");
+  json_t* windspeed = json_object_get(current_weather, "wind_speed_10m");
+  json_t* winddirection = json_object_get(current_weather, "wind_direction_10m");
+  json_t* precipitation = json_object_get(current_weather, "precipitation");
+  json_t* weather_code = json_object_get(current_weather, "weather_code");
+
+  /* Get units */
+  json_t* temperature_unit = json_object_get(current_weather_units, "temperature_2m");
+  json_t* windspeed_unit = json_object_get(current_weather_units, "wind_speed_10m");
+  json_t* winddirection_unit = json_object_get(current_weather_units, "wind_direction_10m");
+  json_t* precipitation_unit = json_object_get(current_weather_units, "precipitation");
+
+  /* Validate all expected fields */
+  if (!json_is_number(temperature) || !json_is_string(temperature_unit) ||
+    !json_is_number(windspeed) || !json_is_string(windspeed_unit) ||
+    !json_is_number(winddirection) || !json_is_string(winddirection_unit) ||
+    !json_is_number(precipitation) || !json_is_string(precipitation_unit) ||
+    !json_is_integer(weather_code)) 
+  {
+    printf("Missing or invalid weather data fields in JSON\n");
+    return -4;
+  }
+
+  /* Set weather struct values */
+  (*_Weather_Ptr)->temperature = json_number_value(temperature);
+  (*_Weather_Ptr)->temperature_unit = strdup(json_string_value(temperature_unit));
+
+  (*_Weather_Ptr)->windspeed = json_number_value(windspeed);
+  (*_Weather_Ptr)->windspeed_unit = strdup(json_string_value(windspeed_unit));
+
+  (*_Weather_Ptr)->winddirection = json_number_value(winddirection);
+  (*_Weather_Ptr)->winddirection_unit = strdup(json_string_value(winddirection_unit));
+
+  (*_Weather_Ptr)->precipitation = json_number_value(precipitation);
+  (*_Weather_Ptr)->precipitation_unit = strdup(json_string_value(precipitation_unit));
+
+  (*_Weather_Ptr)->weather_code = json_integer_value(weather_code);
+
+  return 0; 
+}
+
+int meteo_set_forecast_weather(const char* _filepath, Forecast** _Forecast_Ptr) 
+{
   json_t* json = json_load_from_file(_filepath);
   if (json == NULL) 
   {
@@ -207,12 +288,31 @@ int meteo_set_forecast_weather(Forecast* _forecast, const char* _filepath)
 
   if (hours != 0) 
   {
+    /* _Forecast_Ptr->weather = malloc(sizeof(Weather) * hours); */
+    *_Forecast_Ptr = (Forecast*)calloc(1, sizeof(Forecast)); 
+    if (*_Forecast_Ptr == NULL) {
+      printf("Failed to allocate memory for Forecast\n");
+      return -3;
+    }
 
-    /* Allocate memory in Forecast for as many Weather structs we need */
-    _forecast->weather = malloc(sizeof(Weather) * hours);
+    /* Allocate memory in Forecast.weather for as many Weather structs we need */
+    (*_Forecast_Ptr)->weather = (Weather*)calloc(1, sizeof(Weather) * hours); 
+    if (*_Forecast_Ptr == NULL) {
+      printf("Failed to allocate memory for Forecast weathers\n");
+      free(*_Forecast_Ptr);
+      return -4;
+    }
 
-    /* Loop through all hours */
-    json_array_foreach(json_times, index, array_value) {
+    /* We assume there is nothing in it now
+     * Should look into possibility of there being data in it already at this stage
+     * it should maybe be nulled if not null earlier in the process 
+     * unless we want to keep a history of weather data but that seems like it could get too big for device's memory
+     * Maybe add it during cache stage instead if so */
+    (*_Forecast_Ptr)->count = -1;
+
+    /* Loop through all hours to populate each Forecast->Weather */
+    json_array_foreach(json_times, index, array_value) 
+    {
       Weather hour_weather = {0};
 
       hour_weather.temperature_unit = json_string_value(json_temperature_unit);
@@ -228,21 +328,28 @@ int meteo_set_forecast_weather(Forecast* _forecast, const char* _filepath)
       json_t* hour_weathercode = json_array_get(json_weathercode, index);
 
       if (!json_is_number(hour_temperature) ||
-        !json_is_number(hour_windspeed)     ||
-        !json_is_number(hour_winddirection) ||
-        !json_is_number(hour_precipitation) ||
-        !json_is_integer(hour_weathercode)  )
+          !json_is_number(hour_windspeed)     ||
+          !json_is_number(hour_winddirection) ||
+          !json_is_number(hour_precipitation) ||
+          !json_is_integer(hour_weathercode)  )
       {
         printf("Missing or invalid weather data fields in JSON\n");
-        return -3;
+        free((*_Forecast_Ptr)->weather);
+        free(*_Forecast_Ptr);
+        return -5;
       }
 
       /* Timestamp */
       const char* str_timestamp = strdup(json_string_value(hour_time));
-      time_t epoch = parse_time_string(str_timestamp);
+      time_t epoch = parse_iso_datetime(str_timestamp);
       hour_weather.timestamp = epoch;
       /* printf("time_t: %li\n", hour_weather.timestamp); */
-      
+
+      /* Weather code */
+      int weather_code = json_integer_value(hour_weathercode);
+      hour_weather.weather_code = weather_code;
+      /* printf("Weather code: %i\n", hour_weather.weather_code); */
+
       /* Temperature */
       double temperature = json_real_value(hour_temperature);
       hour_weather.temperature = temperature;
@@ -257,108 +364,33 @@ int meteo_set_forecast_weather(Forecast* _forecast, const char* _filepath)
       int winddirection = json_integer_value(hour_winddirection);
       hour_weather.winddirection = winddirection;
       /* printf("wind direction: %i\n", hour_weather.winddirection); */
-      
+
       /* Precipitation */
       int precipitation = json_real_value(hour_precipitation);
       hour_weather.precipitation = precipitation;
       /* printf("Precipitation: %lf\n", hour_weather.precipitation); */
-      
-      /* Weather code */
-      int weather_code = json_integer_value(hour_weathercode);
-      hour_weather.weather_code = weather_code;
-      /* printf("Weather code: %i\n", hour_weather.weather_code); */
 
-      _forecast->weather[index] = hour_weather;
-
+      (*_Forecast_Ptr)->weather[index] = hour_weather;
     }
+
+    /* Set forecast count to amount of hours after Weather populating success */
+    (*_Forecast_Ptr)->count = hours;
+
   } else {
-    printf("No hourly data found in JSON\n");
+    printf("No hourly weather data found in cache file\n");
     return -5;
   }
 
   return 0;
 }
 
-/* Set current weather values to City's Meteo's Weather struct*/
-int meteo_set_current_weather(const char* _filepath, Weather* _Weather, json_t** _full_json)
-{
-  json_t* json = json_load_from_file(_filepath);
-  if (json == NULL) 
-  {
-    printf("Failed to load JSON from file: %s\n", _filepath);
-    return -1;
-  }
-
-  /* Get main objects */
-  json_t* current_weather = json_object_get(json, "current");
-  json_t* current_weather_units = json_object_get(json, "current_units");
-
-  if (!current_weather || !current_weather_units) 
-  {
-    printf("Failed to get weather data objects from JSON\n");
-    json_decref(json);
-    return -2;
-  }
-
-  /* Get weather values */
-  json_t* temperature = json_object_get(current_weather, "temperature_2m");
-  json_t* windspeed = json_object_get(current_weather, "wind_speed_10m");
-  json_t* winddirection = json_object_get(current_weather, "wind_direction_10m");
-  json_t* precipitation = json_object_get(current_weather, "precipitation");
-  json_t* weather_code = json_object_get(current_weather, "weather_code");
-
-  /* Get units */
-  json_t* temperature_unit = json_object_get(current_weather_units, "temperature_2m");
-  json_t* windspeed_unit = json_object_get(current_weather_units, "wind_speed_10m");
-  json_t* winddirection_unit = json_object_get(current_weather_units, "wind_direction_10m");
-  json_t* precipitation_unit = json_object_get(current_weather_units, "precipitation");
-
-  /* Validate all required fields are present */
-  if (!json_is_number(temperature) || !json_is_string(temperature_unit) ||
-    !json_is_number(windspeed) || !json_is_string(windspeed_unit) ||
-    !json_is_number(winddirection) || !json_is_string(winddirection_unit) ||
-    !json_is_number(precipitation) || !json_is_string(precipitation_unit) ||
-    !json_is_integer(weather_code)) 
-  {
-    printf("Missing or invalid weather data fields in JSON\n");
-    json_decref(json);
-    return -3;
-  }
-
-  /* Set weather struct values */
-  _Weather->temperature = json_number_value(temperature);
-  _Weather->temperature_unit = strdup(json_string_value(temperature_unit));
-
-  _Weather->windspeed = json_number_value(windspeed);
-  _Weather->windspeed_unit = strdup(json_string_value(windspeed_unit));
-
-  _Weather->winddirection = json_number_value(winddirection);
-  _Weather->winddirection_unit = strdup(json_string_value(winddirection_unit));
-
-  _Weather->precipitation = json_number_value(precipitation);
-  _Weather->precipitation_unit = strdup(json_string_value(precipitation_unit));
-
-  _Weather->weather_code = json_integer_value(weather_code);
-  
-  if (_full_json != NULL) 
-  {
-    *_full_json = json;
-    json_incref(json); /* Increase reference count so it doesn't get freed */
-  }
-
-  /* Clean up */
-  json_decref(json);
-
-  return 0; 
-}
-
-/* Main public function for calling necessary functions needed to get individal City weather */
-int meteo_get_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_json, bool _forecast)
+/* Calls necessary internal functions to get current and forecast weather */
+int meteo_get_weather(float _lat, float _lon, Weather** _Weather_Ptr, Forecast** _Forecast_Ptr, bool _hourly)
 {
   int result = 0;
 
   char url[512];
-  result = meteo_build_url(url, _lat, _lon, _forecast);
+  result = meteo_build_url(url, _lat, _lon, _hourly);
   if (result != 0)
     return result;
 
@@ -371,17 +403,21 @@ int meteo_get_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_
 
   /* printf("Path built: %s\n", filepath); */
 
-  result = meteo_update_cache(filepath, url, _forecast);
+  result = meteo_update_cache(filepath, url, _hourly);
   if (result != 0)
     return result;
 
-  Forecast forecast = {0};
+  if (!_hourly)
+  {
+    printf("Meteo getting current weather..\n");
+    result = meteo_set_current_weather(filepath, _Weather_Ptr);
+  }
+  else 
+  {
+    printf("Meteo getting forecast..\n");
+    result = meteo_set_forecast_weather(filepath, _Forecast_Ptr);
+  }
 
-  result = meteo_set_forecast_weather(&forecast, filepath);
-  if (result != 0)
-    return result;
-
-  result = meteo_set_current_weather(filepath, _Weather, _full_json);
   if (result != 0)
     return result;
 
@@ -389,8 +425,3 @@ int meteo_get_weather(float _lat, float _lon, Weather* _Weather, json_t** _full_
 
   return result;
 }
-
-/* 
-   Should exist:
-   int meteo_get_forecast(float _lat, float _lon, Weather* _weather) 
-*/

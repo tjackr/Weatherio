@@ -343,41 +343,19 @@ char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon
   return filepath;
 }
 
-/* Call meteo functions for given City's weather data */
-int city_get_weather(City* _City, bool _forecast)
+/* Call meteo for given City's weather/forecast data */
+int city_get_weather(City* _City, bool _hourly)
 {
   int result = -1;
 
-  /* Allocate weather struct if not already allocated */
-  if (_City->weather == NULL) {
-    _City->weather = (Weather*)calloc(1, sizeof(Weather)); /* Do we free this anywhere? */
-    if (_City->weather == NULL) {
-      printf("Failed to allocate memory for weather data\n");
-      return -1;
-    }
-  }
-
-  /* Call meteo without direct mention of what City nor Cities is */
-  json_t* full_weather_json = NULL;
-  if (!_forecast)
-  {
-    
-    result = meteo_get_weather(_City->lat, _City->lon, _City->weather, &full_weather_json, true);
-    if (result == 0 && full_weather_json != NULL) 
-    {
-      json_decref(full_weather_json);
-    }
-
-    return result;
-  }
-  else
-  {
-    printf("meteo_get_forecast_weather() but unironically\n");
-
-    return result;
-  }
+  /* We need a weather dispose function (Or add it inside City remove
+   * since we manually allocate memory for these inside meteo:
+   * City.Weather
+   * City.Forecast
+   * City.Forecast.Weather
+   * */
+  result = meteo_get_weather(_City->lat, _City->lon, &_City->weather, &_City->forecast, _hourly);
   
-  printf("Failed to get weather...\n");
   return result;
 }
 
