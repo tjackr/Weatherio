@@ -361,7 +361,7 @@ void display_forecast_table(City *_City, int interval)
     struct tm *timeinfo = localtime(&w->timestamp);
     int hour = timeinfo->tm_hour;
 
-    if (hour % 6 == 0)
+    if (hour % interval == 0)
     {
       const char *weather_desc = get_weather_description(w->weather_code);
       int desc_width = utf8_display_width(weather_desc);
