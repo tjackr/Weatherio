@@ -45,8 +45,6 @@ int meteo_build_url(char* _url, float _lat, float _lon, bool _forecast)
     _lon,
     params);
 
-    printf("%s\n", _url);
-
   return 0;
 }
 
@@ -305,7 +303,7 @@ int meteo_set_forecast_weather(const char* _filepath, Forecast** _Forecast_Ptr)
 
     /* We assume there is nothing in it now
      * Should look into possibility of there being data in it already at this stage
-     * it should maybe be nulled if not null earlier in the process 
+     * it should maybe be nulled if not null 
      * unless we want to keep a history of weather data but that seems like it could get too big for device's memory
      * Maybe add it during cache stage instead if so */
     (*_Forecast_Ptr)->count = -1;
@@ -424,4 +422,26 @@ int meteo_get_weather(float _lat, float _lon, Weather** _Weather_Ptr, Forecast**
   free(filepath);
 
   return result;
+}
+
+/* Dispose of these if they have been allocated:
+* Weather
+* Forecast
+* Forecast.Weather */
+void meteo_dispose(Weather** _Weather_Ptr, Forecast** _Forecast_Ptr)
+{
+  if (_Weather_Ptr != NULL && *_Weather_Ptr != NULL)
+  {
+    free(*_Weather_Ptr);
+    *_Weather_Ptr = NULL;
+  }
+
+  if (_Forecast_Ptr != NULL && *_Forecast_Ptr != NULL)
+  {
+    if ((*_Forecast_Ptr)->weather != NULL)
+      free((*_Forecast_Ptr)->weather);
+
+    free(*_Forecast_Ptr);
+    *_Forecast_Ptr = NULL;
+  }
 }

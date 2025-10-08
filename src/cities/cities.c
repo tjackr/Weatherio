@@ -273,15 +273,8 @@ int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _
 void city_remove(Cities* _Cities, City* _City)
 {
 
-  /* If weather structs are populated, free them */
-  if (_City->forecast != NULL)
-  {
-    free(_City->forecast);
-  }
-  if (_City->weather != NULL)
-  {
-    free(_City->weather);
-  }
+  /* Free all the weather related memory first */
+  meteo_dispose(&(_City)->weather, &(_City)->forecast);
 
 	if (_City->next == NULL && _City->prev == NULL)  /* I'm alone :( */
 	{
@@ -306,6 +299,7 @@ void city_remove(Cities* _Cities, City* _City)
 
 	/* All cases are handled, free the memory */
 	free(_City);
+  _City = NULL;
 }
 
 /* Creates json file containing city name and coordinates */
@@ -367,5 +361,7 @@ void cities_dispose(Cities* _Cities)
   {
     City* City = _Cities->head;
     city_remove(_Cities, City);
+    _Cities->head = _Cities->tail;
   }
+  _Cities = NULL;
 }

@@ -42,5 +42,6 @@ typedef struct
 
 int meteo_get_weather(float _lat, float _lon, Weather** _Weather_Ptr, Forecast** _Forecast_Ptr, bool _hourly);
 
+void meteo_dispose(Weather** _Weather_Ptr, Forecast** _Forecast_Ptr);
 
 #endif 
