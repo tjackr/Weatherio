@@ -253,8 +253,6 @@ int cli_init(Cities* _Cities) {
             if (sizeof(Selected_City->forecast->weather[0]) == sizeof(Weather))
             {
               
-              const char* description = get_weather_description(Selected_City->weather->weather_code);
-              const char* ascii = get_weather_ascii_art(Selected_City->weather->weather_code);
 
               const int CONTENT_WIDTH = 42;
 
@@ -269,6 +267,9 @@ int cli_init(Cities* _Cities) {
               int i;
               for (i = 0; i < Selected_City->forecast->count; i++)
               {
+
+                const char* description = get_weather_description(Selected_City->forecast->weather[i].weather_code);
+                const char* ascii = get_weather_ascii_art(Selected_City->forecast->weather[i].weather_code);
                 printf("╠══════════════════════════════════════════╣\n");
 
                 /* ASCII art */
