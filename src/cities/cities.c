@@ -26,7 +26,7 @@ int cities_init(Cities* _Cities)
   /* Create basic directories */
   if (create_directory_if_not_exists("./data/") != 0 ||
       create_directory_if_not_exists(CACHE_PATH) != 0 ||
-      create_directory_if_not_exists(CITIES_PATH) != 0) 
+      create_directory_if_not_exists(CITIES_PATH) != 0)
   {
     printf("Failed to create data directories, exiting.\n");
     exit(0);
@@ -37,9 +37,9 @@ int cities_init(Cities* _Cities)
 
   /* Load cities from template file */
   FileString Cities_List_String = create_file_string("data/city_coords.txt");
-  if (Cities_List_String.data == NULL) { 
-    printf("Loading cities from file failed, exiting.\n"); 
-    exit(1); 
+  if (Cities_List_String.data == NULL) {
+    printf("Loading cities from file failed, exiting.\n");
+    exit(1);
   }
 
   /* Parse cities from template file and free string memory */
@@ -48,12 +48,12 @@ int cities_init(Cities* _Cities)
 
   /* Parse cities from json files
    * This also adds each existing City to Cities */
-  cities_parse_files(_Cities); 
+  cities_parse_files(_Cities);
 
   return 0;
 }
 
-/* Prints list of cities and returns their count */
+/* Prints list of Citys in Cities and returns their count */
 int cities_print(Cities* _Cities)
 {
 	City* current = _Cities->head;
@@ -71,12 +71,12 @@ int cities_print(Cities* _Cities)
     i++;
 
 	} while (current != NULL);
-  
+
   return i;
 }
 
-/* Populates cities json files, calling city_save_to_file based on template cities string
- * Format: Name:Lat:Lon\n */
+/* Reads city template list string, extracts name, lat and lon, calling city_save_to_file for each entry
+ * List format: Name:Lat:Lon\n */
 void cities_parse_list(const char* _cities_string)
 {
 	char* list_copy = strdup(_cities_string);
@@ -145,7 +145,7 @@ void cities_parse_list(const char* _cities_string)
 	free(list_copy);
 }
 
-/* Reads all files in cities json directory for saved cities and adds them to Cities struct */
+/* Reads all files in json directory for potential Citys and calls city_add if they are valid */
 void cities_parse_files(Cities* _Cities)
 {
   tinydir_dir dir;
@@ -158,7 +158,9 @@ void cities_parse_files(Cities* _Cities)
     tinydir_readfile(&dir, &file);
 
     /* Only parse files with .json extension */
-    if (strcmp( (file.name + strlen(file.name)) - strlen(".json"), ".json" ) == 0) 
+    char* ext = strchr(file.name, '.');
+    printf("File extension: %s", ext); 
+    if (strcmp(ext, ".json") == 0)
     {
       char* full_path = stringcat(CITIES_PATH, file.name);
 
@@ -171,12 +173,15 @@ void cities_parse_files(Cities* _Cities)
       /* If above objects are fine we can add values to a new City struct */
       if (json_is_string(json_name) && json_is_real(json_lat) && json_is_real(json_lon))
       {
-        city_add(_Cities, 
-          strdup(json_string_value(json_name)), 
-          (float)json_real_value(json_lat), 
-          (float)json_real_value(json_lon), 
+        char* city_name = strdup(json_string_value(json_name));
+        printf("City name: %s", city_name);
+        city_add(_Cities,
+          city_name,
+          (float)json_real_value(json_lat),
+          (float)json_real_value(json_lon),
           NULL);
       }
+      json_decref(json);
       free(full_path);
     }
     tinydir_next(&dir);
@@ -184,7 +189,7 @@ void cities_parse_files(Cities* _Cities)
   tinydir_close(&dir);
 }
 
-/* Add new City struct to Cities struct */
+/* Add new City to Cities */
 int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_Ptr)
 {
 	City* New_City = (City*)malloc(sizeof(City));
@@ -195,7 +200,7 @@ int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_
     return -1;
   }
 
-  New_City->name = strdup(_name);
+  New_City->name = _name;
   New_City->lat = _lat;
   New_City->lon = _lon;
 
@@ -217,14 +222,14 @@ int city_add(Cities* _Cities, char* _name, float _lat, float _lon, City** _City_
     _Cities->tail->next = New_City;
     _Cities->tail = New_City;
   }
-  
+
   if (_City_Ptr != NULL)
     *_City_Ptr = New_City;
 
   return 0;
 }
 
-/* Get city by corresponding name */
+/* Get City by it's name */
 int city_get_by_name(Cities* _Cities, const char* _name, City** _City_Ptr)
 {
 	City* Current = _Cities->head;
@@ -237,18 +242,18 @@ int city_get_by_name(Cities* _Cities, const char* _name, City** _City_Ptr)
 		{
 			if (_City_Ptr != NULL)
 				*_City_Ptr = Current;
-				
+
 			return 0;
 		}
 
 		Current = Current->next;
 
 	} while (Current != NULL);
-	
+
 	return -2;
 }
 
-/* Get city by its index in the cities linked list */
+/* Get City by it's index in Cities */
 int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _City_Ptr)
 {
   City* Current = _Cities->head;
@@ -272,10 +277,10 @@ int city_get_by_index(Cities* _Cities, int* _cities_count, int* _index, City** _
 /* Remove City struct from Cities struct */
 void city_remove(Cities* _Cities, City* _City)
 {
-
-  /* Free all the weather related memory first */
+  /* Free all weather related memory first */
   meteo_dispose(&(_City)->weather, &(_City)->forecast);
 
+  /* Remove City from Cities */
 	if (_City->next == NULL && _City->prev == NULL)  /* I'm alone :( */
 	{
 		_Cities->head = NULL;
@@ -297,7 +302,8 @@ void city_remove(Cities* _Cities, City* _City)
 		_City->next->prev = _City->prev;
 	}
 
-	/* All cases are handled, free the memory */
+	/* Free the City-related memory and null it */
+  free(_City->name);
 	free(_City);
   _City = NULL;
 }
@@ -318,7 +324,7 @@ int city_save_to_file(const char* _filepath, const char* _city_name, float _lat,
   return 0;
 }
 
-/* Returns json filepath with hashed city name+lat+lon 
+/* Returns json filepath with hashed city name+lat+lon
  * Needs to be freed by caller */
 char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon)
 {
@@ -340,23 +346,17 @@ char* city_hashed_filepath(const char* _name, const char* _lat, const char* _lon
 /* Call meteo for given City's weather/forecast data */
 int city_get_weather(City* _City, bool _hourly)
 {
-  int result = -1;
+  int result = -69;
 
-  /* We need a weather dispose function (Or add it inside City remove
-   * since we manually allocate memory for these inside meteo:
-   * City.Weather
-   * City.Forecast
-   * City.Forecast.Weather
-   * */
   result = meteo_get_weather(_City->lat, _City->lon, &_City->weather, &_City->forecast, _hourly);
-  
+
   return result;
 }
 
 /* Dispose of cities struct */
 void cities_dispose(Cities* _Cities)
 {
-  /* Call city_remove on each city until Cities no longer has a head */
+  /* Call city_remove on each City until Cities no longer has a head */
   while (_Cities->head != NULL)
   {
     City* City = _Cities->head;
