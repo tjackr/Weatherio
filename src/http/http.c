@@ -94,5 +94,6 @@ int curl_get_response(HTTP* _Data, const char* _url)
 /* Caller needs to free the data from memory when they're done using it 🐦 */
 void http_dispose(HTTP* _Data)
 {
-  free(_Data);
+  free(_Data->addr);
+  _Data->addr = NULL;
 }

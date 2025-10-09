@@ -159,7 +159,6 @@ void cities_parse_files(Cities* _Cities)
 
     /* Only parse files with .json extension */
     char* ext = strchr(file.name, '.');
-    printf("File extension: %s", ext); 
     if (strcmp(ext, ".json") == 0)
     {
       char* full_path = stringcat(CITIES_PATH, file.name);
@@ -174,7 +173,6 @@ void cities_parse_files(Cities* _Cities)
       if (json_is_string(json_name) && json_is_real(json_lat) && json_is_real(json_lon))
       {
         char* city_name = strdup(json_string_value(json_name));
-        printf("City name: %s", city_name);
         city_add(_Cities,
           city_name,
           (float)json_real_value(json_lat),

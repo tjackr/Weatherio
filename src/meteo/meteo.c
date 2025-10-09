@@ -179,6 +179,7 @@ int meteo_update_cache(const char* _filepath, const char* _url, bool _hourly)
 		return -6;
 	}
 
+  http_dispose(&Http);
   json_decref(json);
   return 0; 
 }
