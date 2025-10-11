@@ -5,7 +5,6 @@
 #include "cli.h"
 #include "../utils/misc.h"
 #include "../utils/weather_codes.h"
-#include "../utils/timeparse.h"
 
 /*============= Internal functions =============*/
 
@@ -24,6 +23,8 @@ static void print_table_cell_centered(const char *_text, int _width);
 static void print_table_border(const char *left, const char *mid, const char *right, int weather_width);
 
 static void print_table_full_border(const char *left, const char *right, int weather_width);
+
+const char* wind_direction_arrow(int _direction);
 
 /*==============================================*/
 
@@ -246,22 +247,23 @@ void display_current_weather(City *_City)
   /* Weather data */
   char line_buffer[128];
 
-  snprintf(line_buffer, sizeof(line_buffer), "  Temperatur:    %.1lf %s",
+  snprintf(line_buffer, sizeof(line_buffer), "  Temperatur:    %.1lf%s",
            _City->weather->temperature,
            _City->weather->temperature_unit);
   print_fixed_line(line_buffer, CONTENT_WIDTH);
 
-  snprintf(line_buffer, sizeof(line_buffer), "  Vindstyrka:    %.1lf %s",
+  snprintf(line_buffer, sizeof(line_buffer), "  Vindstyrka:    %.1lf%s",
            _City->weather->windspeed,
            _City->weather->windspeed_unit);
   print_fixed_line(line_buffer, CONTENT_WIDTH);
 
-  snprintf(line_buffer, sizeof(line_buffer), "  Vindriktning:  %i %s",
+  snprintf(line_buffer, sizeof(line_buffer), "  Vindriktning:  %i%s %s",
            _City->weather->winddirection,
-           _City->weather->winddirection_unit);
+           _City->weather->winddirection_unit,
+           wind_direction_arrow(_City->weather->winddirection));
   print_fixed_line(line_buffer, CONTENT_WIDTH);
 
-  snprintf(line_buffer, sizeof(line_buffer), "  Nederbörd:     %.2lf %s",
+  snprintf(line_buffer, sizeof(line_buffer), "  Nederbörd:     %.2lf%s",
            _City->weather->precipitation,
            _City->weather->precipitation_unit);
   print_fixed_line(line_buffer, CONTENT_WIDTH);
@@ -342,6 +344,32 @@ static void print_table_border(const char *left, const char *mid, const char *ri
   for (int i = 0; i < 12; i++)
     printf("═"); /* Nederbörd */
   printf("%s\n", right);
+}
+
+/* Takes wind direction in azimuth degrees and returns cardinal/intercardinal point */
+const char* wind_direction_arrow(int _direction)
+{
+  /* ← ↑ → ↓ ↖ ↗ ↘ ↙ */
+
+  if ((_direction <= 23 && _direction >= 0) || 
+      (_direction >= 337 && _direction <= 360)) 
+    return "↑ (N)";
+  else if (_direction <= 67 && _direction >= 22) 
+    return "↗ (NÖ)";
+  else if (_direction <= 112 && _direction >= 67) 
+    return "→ (Ö)";
+  else if (_direction <= 157 && _direction >= 112) 
+    return "↘ (SÖ)";
+  else if (_direction <= 202 && _direction >= 157) 
+    return "↓ (S)";
+  else if (_direction <= 247 && _direction >= 202) 
+    return "↙ (SV)";
+  else if (_direction <= 292 && _direction >= 247) 
+    return "← (V)";
+  else if (_direction <= 337 && _direction >= 293) 
+    return "↖ (NV)";
+  else
+    return "?";
 }
 
 /* Display 7-day forecast in table format */
@@ -483,8 +511,10 @@ void display_forecast_table(City *_City, int interval)
 /* Main CLI loop */
 int cli_init(Cities *_Cities)
 {
-
   int result;
+  int input_choice = 0;
+  City *Selected_City;
+  
   printf("\n\n"
          "Varmt välkommen till \n"
          "--------------------\n"
@@ -505,9 +535,7 @@ int cli_init(Cities *_Cities)
     {
       printf("\nTillgängliga städer:\n");
 
-      City *Selected_City;
       int cities_count = cities_print(_Cities);
-      int input_choice = 0;
 
       printf("\nVälj stad: ");
       scanf("%5i", &input_choice);
@@ -543,9 +571,7 @@ int cli_init(Cities *_Cities)
     {
       printf("\nTillgängliga städer:\n");
 
-      City *Selected_City;
       int cities_count = cities_print(_Cities);
-      int input_choice = 0;
 
       printf("\nVälj stad för prognos: ");
       scanf("%5i", &input_choice);
