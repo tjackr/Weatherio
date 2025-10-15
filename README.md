@@ -3,9 +3,7 @@
 **CLI weather application written in C99**
 
 Features:
-- Uses open-meteo API to get weather data from a city
-- Fancy CLI interface
-- Linked list & cache layers
+- Beautiful directory tree
 
 ## Table of Contents
 
@@ -16,16 +14,25 @@ Features:
 
 ## Installation
 
-1. Clone the repo and enter cloned dir:
-`git clone https://github.com/tjackr/Weatherio.git && cd Weatherio`
-
-2. Just let make do its magic:
-`make all`
-
 ## Usage
 
-Run the CLI app:
-`./Weatherio`
+**Make instructions:**
+Each target can be individually built from root directory, adding a suffix to the target name.
+Targets (project modules):
+- server
+- client
+- client_cpp
+
+Make suffixes:
+- /run
+- /clean
+- /valgrind
+- /addlinks
+- /rmlinks
+
+For example:
+`make server/run`
+will build and run only the server module.
 
 ## Contribution
 
@@ -40,12 +47,4 @@ Run the CLI app:
 3. ...
 
 ## Dev Notes
-
-_src/includes_ contains mainly external source code, some which is customized. Credit to original authors is due.
-
-
-
-_This baby can't run yet_ 
-
-_... But it does crawl_ 👶
 

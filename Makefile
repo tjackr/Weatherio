@@ -1,81 +1,95 @@
 # ======================================
-# 🌤 Weatherio Makefile (Cross-platform)
+# 🌤 Weatherio Main Makefile
 # ======================================
 
-# Compiler (use clang on macOS, gcc otherwise)
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Darwin)
-	CC := clang
-else
-	CC := gcc
-endif
+MODULES := server client client_cpp
 
-# Directories
-SRC_DIR   := src
-BUILD_DIR := build
-CACHE_DIR := data/cache
-CITIES_DIR := data/cities
+INCLUDES_DIR := includes
+SERVER_INCLUDES := jansson tinydir.h md5.h md5.c
+CLIENT_INCLUDES := jansson md5.h md5.c
+CLIENT_CPP_INCLUDES := jansson
 
-# Compilation flags
-CFLAGS := -std=c99 -MMD -MP -Wall -Wextra -Werror -Wfatal-errors -Wno-format-truncation -Iconfigs -g
-#CFLAGS := -std=c99 -MMD -MP -Wall -Iconfigs -g
+.PHONY: all \
+	clean \
+	$(MODULES) \
+	$(addsuffix /addlinks,$(MODULES)) \
+	$(addsuffix /rmlinks,$(MODULES)) \
+	$(addsuffix /run,$(MODULES)) \
+	$(addsuffix /clean,$(MODULES)) \
+	$(addsuffix /valgrind,$(MODULES)) \
+	create_symlinks \
+	remove_symlinks
 
-# Linker flags (auto-detect platform)
-ifeq ($(UNAME_S),Darwin)
-	LDFLAGS := -flto
-else
-	LDFLAGS := -flto -Wl,--gc-sections
-endif
+# Default target: build all modules
+all: $(MODULES)
 
-# Linked libraries
-LIBS := -lcurl
+# Build each module with symlinks created first
+$(MODULES):
+	$(MAKE) create_symlinks MODULE=$@
+	@echo "Building module $@..."
+	$(MAKE) -C $@ all
 
-# Find all .c source files recursively
-SRC := $(shell find -L $(SRC_DIR) -type f -name '*.c')
+# Create target symlinks using make [module]/addlinks
+$(addsuffix /addlinks,$(MODULES)):
+	@MODULE=$(@D); \
+	$(MAKE) create_symlinks MODULE=$$MODULE;
 
-# Map .c → .o in the build directory
-OBJ := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC))
+# Remove target symlinks using make [module]/rmlinks
+$(addsuffix /rmlinks,$(MODULES)):
+	@MODULE=$(@D); \
+	$(MAKE) remove_symlinks MODULE=$$MODULE;
 
-# Dependency files (.d)
-DEP := $(OBJ:.o=.d)
+# Run target using make [module]/run
+$(addsuffix /run,$(MODULES)):
+	@MODULE=$(@D); \
+	$(MAKE) create_symlinks MODULE=$$MODULE; \
+	echo "Running module $$MODULE..."; \
+	$(MAKE) -C $$MODULE run
 
-# Binary name
-BIN := Weatherio
+# Clean target using make [module]/clean
+$(addsuffix /clean,$(MODULES)):
+	@MODULE=$(@D); \
+	echo "Cleaning module $$MODULE..."; \
+	$(MAKE) remove_symlinks MODULE=$$MODULE; \
+	$(MAKE) -C $$MODULE clean
 
-# ========================
-# Build rules
-# ========================
+# Run valgrind on target using [module]/valgrind
+$(addsuffix /valgrind,$(MODULES)):
+	@MODULE=$(@D); \
+	$(MAKE) create_symlinks MODULE=$$MODULE; \
+	echo "Valgrinding module $$MODULE..."; \
+	$(MAKE) -C $$MODULE valgrind
 
-all: $(BIN)
-	@echo "✅ Build complete."
+#############################
+# Symlink creation
+#############################
 
-$(BIN): $(OBJ)
-	@echo "🔗 Linking..."
-	@$(CC) $(LDFLAGS) $(OBJ) -o $@ $(LIBS)
+# These use ln -s to link /includes files to [module]/src/includes/ dir.
+# Remember if structure changes to also update paths here
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	@echo "⚙️  Compiling $<..."
-	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c $< -o $@
+create_symlinks:
+	@INCLUDES_VAR=$(shell echo $(MODULE)_INCLUDES | tr a-z A-Z); \
+	FILES=$$($(MAKE) -s -f $(lastword $(MAKEFILE_LIST)) print_includes VAR=$$INCLUDES_VAR); \
+	for file in $$FILES; do \
+		src="$(INCLUDES_DIR)/$$file"; \
+		dst="$(MODULE)/src/includes/$$file"; \
+		if [ ! -e "$$dst" ]; then \
+			mkdir -p $$(dirname $$dst); \
+			ln -s ../../../$$src $$dst; \
+			echo "  Symlinked $$dst -> ../../../$$src"; \
+		fi; \
+	done
 
-run: $(BIN)
-	@echo "🚀 Running Weatherio..."
-	@./$(BIN)
+remove_symlinks:
+	@INCLUDES_VAR=$(shell echo $(MODULE)_INCLUDES | tr a-z A-Z); \
+	FILES=$$($(MAKE) -s -f $(lastword $(MAKEFILE_LIST)) print_includes VAR=$$INCLUDES_VAR); \
+	for file in $$FILES; do \
+		dst="$(MODULE)/src/includes/$$file"; \
+		if [ -L "$$dst" ]; then \
+			rm $$dst; \
+			echo "  Removed symlink $$dst"; \
+		fi; \
+	done
 
-clean:
-	@echo "🧹 Cleaning build files..."
-	@rm -rf $(BUILD_DIR) $(CACHE_DIR) $(CITIES_DIR) $(BIN)
-	@echo "✨ Clean complete."
-
-valgrind: $(BIN)
-	@echo "   Running using valgrind..."
-	@valgrind -s --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(BIN)
-
-print:
-	@echo "Källfiler: $(SRC)"
-	@echo "Objektfiler: $(OBJ)"
-	@echo "Dependency-filer: $(DEP)"
-
--include $(DEP)
-
-.PHONY: all run clean print
+print_includes:
+	@echo $($(VAR))
