@@ -1,29 +1,34 @@
 #ifndef __Meteo_h__
 #define __Meteo_h__
 
+#include <time.h>
 #include "../includes/jansson/jansson.h"
 
 
 #define METEO_BASE_URL "https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f%s"
 
+/*============== Global variables ==============*/
+
 extern const char* CACHE_PATH;
+
+/*==============================================*/
 
 typedef struct
 {
-  double      timestamp;
+  time_t      timestamp;
   int         weather_code; 
 
   double      temperature; 
-  char*       temperature_unit; 
+  const char* temperature_unit; 
 
   double      windspeed; 
-  char*       windspeed_unit;
+  const char* windspeed_unit;
 
-  double      winddirection; 
-  char*       winddirection_unit;
+  int         winddirection; 
+  const char* winddirection_unit;
 
   double      precipitation;
-  char*       precipitation_unit;
+  const char* precipitation_unit;
 
 } Weather;
 
@@ -35,7 +40,8 @@ typedef struct
 } Forecast;
 
 
-int meteo_get_current_weather(float _lat, float _lon, Weather* weather, json_t** _full_json);
+int meteo_get_weather(float _lat, float _lon, Weather** _Weather_Ptr, Forecast** _Forecast_Ptr, bool _hourly);
 
+void meteo_dispose(Weather** _Weather_Ptr, Forecast** _Forecast_Ptr);
 
 #endif 
