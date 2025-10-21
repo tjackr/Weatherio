@@ -1,13 +1,40 @@
 # ======================================
-# 🌤 Weatherio Main Makefile
+# 🌤 Weatherio Main Makefile 
+# For linux (and maybe macos)
 # ======================================
 
 MODULES := server client client_cpp
 
-INCLUDES_DIR := includes
-SERVER_INCLUDES := jansson tinydir.h md5.h md5.c
-CLIENT_INCLUDES := jansson md5.h md5.c
-CLIENT_CPP_INCLUDES := jansson
+
+#############################
+# Libs assignment
+#############################
+
+# Define which libs to link to which module using symlink functions
+
+
+LIBS_DIR := libs
+
+SERVER_LIBS := utils/linkedlist.h \
+							 utils/linkedlist.c \
+							 includes/jansson \
+							 includes/tinydir.h \
+							 includes/md5.h \
+							 includes/md5.c
+
+CLIENT_LIBS := cJSON.c \
+							 cJSON.h \
+							 includes/tinydir.h \
+							 includes/md5.h \
+							 includes/md5.c
+
+CLIENT_CPP_LIBS := includes/jansson
+
+
+#############################
+# PHONIES
+#############################
+
 
 .PHONY: all \
 	clean \
@@ -20,8 +47,22 @@ CLIENT_CPP_INCLUDES := jansson
 	create_symlinks \
 	remove_symlinks
 
+
+#############################
+# Recipes
+#############################
+
+
 # Default target: build all modules
 all: $(MODULES)
+
+clean:
+	@for module in $(MODULES); do \
+		echo "Cleaning $$module..."; \
+		$(MAKE) remove_symlinks MODULE=$$module; \
+		$(MAKE) -C $$module clean; \
+	done
+	@echo "All modules cleaned."
 
 # Build each module with symlinks created first
 $(MODULES):
@@ -60,6 +101,7 @@ $(addsuffix /valgrind,$(MODULES)):
 	echo "Valgrinding module $$MODULE..."; \
 	$(MAKE) -C $$MODULE valgrind
 
+
 #############################
 # Symlink creation
 #############################
@@ -67,24 +109,27 @@ $(addsuffix /valgrind,$(MODULES)):
 # These use ln -s to link /includes files to [module]/src/includes/ dir.
 # Remember if structure changes to also update paths here
 
+
+# This could probably be improved to dynamically find how many steps back source is
+# i.e not use ../../../../ statically
 create_symlinks:
-	@INCLUDES_VAR=$(shell echo $(MODULE)_INCLUDES | tr a-z A-Z); \
-	FILES=$$($(MAKE) -s -f $(lastword $(MAKEFILE_LIST)) print_includes VAR=$$INCLUDES_VAR); \
+	@LIBS_VAR=$(shell echo $(MODULE)_LIBS | tr a-z A-Z); \
+	FILES=$$($(MAKE) -s -f $(lastword $(MAKEFILE_LIST)) print_includes VAR=$$LIBS_VAR); \
 	for file in $$FILES; do \
-		src="$(INCLUDES_DIR)/$$file"; \
-		dst="$(MODULE)/src/includes/$$file"; \
+		src="$(LIBS_DIR)/$$file"; \
+		dst="$(MODULE)/src/libs/$$file"; \
 		if [ ! -e "$$dst" ]; then \
 			mkdir -p $$(dirname $$dst); \
-			ln -s ../../../$$src $$dst; \
-			echo "  Symlinked $$dst -> ../../../$$src"; \
+			ln -s ../../../../$$src $$dst; \
+			echo "  Symlinked $$dst -> ../../../../$$src"; \
 		fi; \
 	done
 
 remove_symlinks:
-	@INCLUDES_VAR=$(shell echo $(MODULE)_INCLUDES | tr a-z A-Z); \
-	FILES=$$($(MAKE) -s -f $(lastword $(MAKEFILE_LIST)) print_includes VAR=$$INCLUDES_VAR); \
+	@LIBS_VAR=$(shell echo $(MODULE)_LIBS | tr a-z A-Z); \
+	FILES=$$($(MAKE) -s -f $(lastword $(MAKEFILE_LIST)) print_includes VAR=$$LIBS_VAR); \
 	for file in $$FILES; do \
-		dst="$(MODULE)/src/includes/$$file"; \
+		dst="$(MODULE)/src/libs/$$file"; \
 		if [ -L "$$dst" ]; then \
 			rm $$dst; \
 			echo "  Removed symlink $$dst"; \

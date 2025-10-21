@@ -59,13 +59,11 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(BIN)
-	@echo "Running Weatherio..."
+	@echo "Running $(BIN)..."
 	@./$(BIN)
 
 clean:
-	@echo "Cleaning build files..."
 	@rm -rf $(BUILD_DIR) $(CACHE_DIR) $(CITIES_DIR) $(BIN)
-	@echo "Clean complete."
 
 valgrind: $(BIN)
 	@echo "Running using valgrind..."

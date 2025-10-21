@@ -1,9 +1,9 @@
-# Weatherio
+ Weatherio
 
 **CLI weather application written in C99**
 
 Features:
-- Beautiful directory tree
+- 
 
 ## Table of Contents
 
@@ -14,10 +14,9 @@ Features:
 
 ## Installation
 
-## Usage
-
 **Make instructions:**
 Each target can be individually built from root directory, adding a suffix to the target name.
+
 Targets (project modules):
 - server
 - client
@@ -32,7 +31,13 @@ Make suffixes:
 
 For example:
 `make server/run`
-will build and run only the server module.
+will build and run only the server target/module.
+
+These general commands can also be run for all targets combined: 
+- make (same as make all, builds all targets)
+- make clean
+
+## Usage
 
 ## Contribution
 
